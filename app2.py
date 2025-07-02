@@ -78,7 +78,7 @@ def scrape_jobs():
     driver.get("https://app.flextender.nl/")
     time.sleep(2)
     driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["username"])
-driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["password"], Keys.ENTER)
+    driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["password"], Keys.ENTER)
     time.sleep(5)
 
     # Naar aanbevolen vacatures
