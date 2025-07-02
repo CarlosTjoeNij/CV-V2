@@ -21,6 +21,8 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 import spacy
 
+nltk.download('stopwords')
+
 # --- Functie om paginanummers te verzamelen ---
 def get_total_pages(driver, wait):
     max_page = 1
