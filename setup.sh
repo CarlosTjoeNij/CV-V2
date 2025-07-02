@@ -4,7 +4,7 @@ set -e
 
 echo "Updating apt and installing dependencies..."
 apt-get update
-apt-get install -y wget unzip curl gnupg libnss3 libxss1 libappindicator1 libindicator7 libgbm-dev fonts-liberation libasound2 xdg-utils libu2f-udev libvulkan1 xvfb
+apt-get install -y wget unzip curl gnupg libnss3 libxss1 libappindicator1 libindicator7 libgbm-dev fonts-liberation libasound2 xdg-utils libu2f-udev libvulkan1 xvfb unzip
 
 echo "Installing Google Chrome..."
 curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-keyring.gpg
