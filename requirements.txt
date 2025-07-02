@@ -1,11 +1,9 @@
-streamlit
+pandas
 selenium
 beautifulsoup4
-pandas
 numpy
 PyMuPDF
 nltk
 scikit-learn
+streamlit
 spacy
-blis==0.7.8
-spacy==3.7.3
