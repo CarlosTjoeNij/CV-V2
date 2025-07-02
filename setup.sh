@@ -4,7 +4,7 @@ set -e
 
 echo "Updating apt and installing dependencies..."
 apt-get update
-apt-get install -y wget unzip curl gnupg libnss3 libxss1 libappindicator1 libindicator7 libgbm-dev fonts-liberation libasound2 xdg-utils libu2f-udev libvulkan1 xvfb unzip
+apt-get install -y wget unzip curl gnupg libnss3 libxss1 libappindicator1 libindicator7 libgbm-dev fonts-liberation libasound2 xdg-utils libu2f-udev libvulkan1 xvfb build-essential python3.13-dev
 
 echo "Installing Google Chrome..."
 curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-keyring.gpg
@@ -22,5 +22,11 @@ wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${DRIV
 unzip /tmp/chromedriver.zip -d /usr/local/bin
 chmod +x /usr/local/bin/chromedriver
 rm /tmp/chromedriver.zip
+
+echo "Upgrading pip, setuptools and wheel..."
+pip install --upgrade pip setuptools wheel
+
+echo "Installing Python dependencies..."
+pip install -r requirements.txt
 
 echo "Setup done."
