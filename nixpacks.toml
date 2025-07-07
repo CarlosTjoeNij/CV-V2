@@ -1,10 +1,11 @@
-[build]
-builder = "nixpacks"
-[build.env]
-NIXPACKS_PYTHON_VERSION = "3.10"
+[nix]
+packages = ["python310", "pip", "chromium", "chromedriver"]
 
 [phases.setup]
-nixPkgs = [
-  "chromium",
-  "chromedriver"
-]
+cmds = ["bash install_chrome.sh"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[start]
+cmd = "streamlit run app.py --server.headless true"
