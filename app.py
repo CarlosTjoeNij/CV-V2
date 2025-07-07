@@ -5,7 +5,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -84,8 +83,8 @@ def scrape_jobs():
     options.add_argument("--disable-dev-shm-usage")
 
     # Als chromium en chromedriver standaard in PATH staan via nix, hoef je geen pad aan te geven.
-    CHROMEDRIVER_VERSION = "138.0.7204.96"
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    service = Service(executable_path="/usr/bin/chromedriver")
+    driver = webdriver.Chrome(service=service, options=options)
     wait = WebDriverWait(driver, 10)
 
     # Inloggen
