@@ -84,6 +84,7 @@ def scrape_jobs():
     options.add_argument("--disable-dev-shm-usage")
 
     # Als chromium en chromedriver standaard in PATH staan via nix, hoef je geen pad aan te geven.
+    CHROMEDRIVER_VERSION = "138.0.7204.96"
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     wait = WebDriverWait(driver, 10)
 
