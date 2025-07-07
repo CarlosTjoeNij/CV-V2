@@ -5,7 +5,7 @@ echo "Updating package lists..."
 apt-get update
 
 echo "Installing dependencies for Chrome..."
-apt-get install -y libgconf-2-4 libappindicator3-1 fonts-liberation
+apt-get install -y libappindicator3-1 fonts-liberation
 
 echo "Downloading Google Chrome..."
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
