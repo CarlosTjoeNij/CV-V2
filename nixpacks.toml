@@ -4,6 +4,7 @@ packages = ["python310", "pip", "chromium", "chromedriver"]
 [phases.setup]
 nixPkgs = ['python311', 'chromium', 'chromedriver']
 commands = [
+  'chmod +x install_chrome.sh',
   './install_chrome.sh'
 ]
 
