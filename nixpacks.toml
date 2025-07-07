@@ -12,7 +12,11 @@ commands = [
   "export PATH=$(dirname $(which python3)):$PATH",
   "curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py",
   "python3 get-pip.py",
-  "python3 -m pip install --upgrade pip",
+  "python3 -m pip install --upgrade pip"
+]
+
+[phases.install]
+cmds = [
   "python3 -m pip install -r requirements.txt",
   "python3 -m spacy download nl_core_news_sm"
 ]
