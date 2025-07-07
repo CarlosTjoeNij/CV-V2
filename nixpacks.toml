@@ -1,4 +1,8 @@
-# nixpacks.toml
+[build]
+builder = "nixpacks"
+[build.env]
+NIXPACKS_PYTHON_VERSION = "3.10"
+
 [phases.setup]
 nixPkgs = [
   "chromium",
