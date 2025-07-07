@@ -73,7 +73,17 @@ def get_total_pages(driver, wait):
 
 # --- Scrape functie, draait pas als PDF geupload is ---
 def scrape_jobs():
-    driver = webdriver.Chrome()
+    from selenium.webdriver.chrome.options import Options
+
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")  # run in headless mode
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920x1080")
+    chrome_options.add_argument("--remote-debugging-port=9222")  # voorkomt crash in sommige omgevingen
+
+    driver = webdriver.Chrome(options=chrome_options)
     wait = WebDriverWait(driver, 10)
 
     # Inloggen
