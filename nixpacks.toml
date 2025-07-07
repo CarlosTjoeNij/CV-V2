@@ -1,6 +1,14 @@
 [nix]
 packages = ["python311", "chromium", "chromedriver"]
 
+[phases.setup]
+commands = [
+  "chmod +x install_chrome.sh",
+  "./install_chrome.sh",
+  "python3 --version",
+  "pip --version"
+]
+
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
 
