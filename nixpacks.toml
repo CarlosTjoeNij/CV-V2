@@ -1,11 +1,10 @@
 [nix]
-packages = ["python310", "pip", "chromium", "chromedriver"]
+packages = ["python311", "chromium", "chromedriver", "wget", "libgconf-2-4", "libappindicator3-1"]
 
 [phases.setup]
-nixPkgs = ['python311', 'chromium', 'chromedriver']
 commands = [
-  'chmod +x install_chrome.sh',
-  './install_chrome.sh'
+  "chmod +x install_chrome.sh",
+  "./install_chrome.sh"
 ]
 
 [phases.install]
