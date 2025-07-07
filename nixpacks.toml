@@ -1,11 +1,6 @@
 [nix]
-packages = ["python311", "chromium", "chromedriver", "wget", "libappindicator3-1", "fonts-liberation"]
-
-[phases.setup]
-commands = [
-  "chmod +x install_chrome.sh",
-  "./install_chrome.sh"
-]
+# Installeer python, chromium en chromedriver via nix
+packages = ["python311", "chromium", "chromedriver"]
 
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
