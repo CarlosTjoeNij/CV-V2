@@ -78,12 +78,13 @@ def get_total_pages(driver, wait):
 # --- Scrape functie, draait pas als PDF geupload is ---
 def scrape_jobs():
     options = Options()
+    options.binary_location = "/usr/bin/google-chrome"  
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
-    # Als chromium en chromedriver standaard in PATH staan via nix, hoef je geen pad aan te geven.
-    service = Service(executable_path="/usr/bin/chromedriver")
+    service = Service(executable_path="/usr/local/bin/chromedriver")  
+
     driver = webdriver.Chrome(service=service, options=options)
     wait = WebDriverWait(driver, 10)
 
