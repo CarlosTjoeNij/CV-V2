@@ -1,6 +1,7 @@
 import time
 import pandas as pd
-from selenium import webdriver
+# from selenium import webdriver
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -75,15 +76,14 @@ def get_total_pages(driver, wait):
 def scrape_jobs():
     from selenium.webdriver.chrome.options import Options
 
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # run in headless mode
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--window-size=1920x1080")
-    chrome_options.add_argument("--remote-debugging-port=9222")  # voorkomt crash in sommige omgevingen
+    options = uc.ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1920,1080")
 
-    driver = webdriver.Chrome(options=chrome_options)
+    driver = uc.Chrome(options=options)
     wait = WebDriverWait(driver, 10)
 
     # Inloggen
