@@ -1,6 +1,8 @@
 # Gebruik een lichte Python base image
 FROM python:3.11-slim
 
+RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/117.0.5938.92/chromedriver_linux64.zip || (echo "Download failed" && ls -la /tmp && exit 1)
+
 # Install systeemtools en Chrome (headless)
 RUN apt-get update && apt-get install -y \
     wget \
