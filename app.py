@@ -76,16 +76,13 @@ def get_total_pages(driver, wait):
 
 # --- Scrape functie, draait pas als PDF geupload is ---
 def scrape_jobs():
-    from selenium.webdriver.chrome.options import Options
-
-    options = uc.ChromeOptions()
-    options.add_argument("--headless")
-    options.add_argument("--disable-gpu")
+    options = Options()
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1920,1080")
 
-    driver = uc.Chrome(options=options)
+    # Als chromium en chromedriver standaard in PATH staan via nix, hoef je geen pad aan te geven.
+    driver = webdriver.Chrome(options=options)
     wait = WebDriverWait(driver, 10)
 
     # Inloggen
