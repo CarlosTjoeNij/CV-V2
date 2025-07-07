@@ -21,6 +21,9 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-0 \
     && rm -rf /var/lib/apt/lists/*
 
+# Installeer benodigde tools
+RUN apt-get update && apt-get install -y wget unzip curl
+
 # Chrome installeren (versie 117)
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt-get update && \
