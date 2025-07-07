@@ -1,9 +1,5 @@
 [nix]
-buildInputs = [
-  "python311.withPackages (ps: with ps; [pip])"
-  "chromium"
-  "chromedriver"
-]
+packages = ["python311", "python311Packages.pip", "chromium", "chromedriver"]
 
 [phases.install]
 cmds = ["python3 -m pip install -r requirements.txt"]
