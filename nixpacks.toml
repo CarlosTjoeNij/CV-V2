@@ -2,7 +2,10 @@
 packages = ["python310", "pip", "chromium", "chromedriver"]
 
 [phases.setup]
-cmds = ["bash install_chrome.sh"]
+nixPkgs = ['python311', 'chromium', 'chromedriver']
+commands = [
+  './install_chrome.sh'
+]
 
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
