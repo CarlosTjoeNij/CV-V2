@@ -1,8 +1,12 @@
 [nix]
 packages = ["python311", "python311Packages.pip", "chromium", "chromedriver"]
 
-[phases.install]
-cmds = ["python3 -m pip install -r requirements.txt"]
+[phases.setup]
+commands = [
+  "python3 -m pip install --upgrade pip",
+  "python3 -m pip install -r requirements.txt",
+  "python3 -m spacy download nl_core_news_sm"
+]
 
 [start]
 cmd = "streamlit run app.py --server.headless true"
