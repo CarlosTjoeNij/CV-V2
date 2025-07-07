@@ -1,6 +1,6 @@
 [nix]
 buildInputs = [
-  "python311.withPackages (ps: with ps; [pip]),"
+  "python311.withPackages (ps: with ps; [pip])",
   "chromium",
   "chromedriver"
 ]
