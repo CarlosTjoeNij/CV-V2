@@ -1,49 +1,33 @@
-# Gebruik officiële Python image
-FROM python:3.11-slim
+FROM python:3.10-slim
 
-# Voorkom interactiviteit
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Installatie van dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    wget \
-    unzip \
-    curl \
-    gnupg \
-    libglib2.0-0 \
-    libnss3 \
-    libgconf-2-4 \
-    libfontconfig1 \
-    libxss1 \
-    libasound2 \
-    libxtst6 \
-    libxrandr2 \
-    libgtk-3-0 \
-    libu2f-udev \
-    libdrm2 \
-    fonts-liberation \
-    xdg-utils \
-    chromium \
-    chromium-driver \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    curl unzip xvfb wget gnupg \
+    libnss3 libgconf-2-4 libxi6 libgl1 libxrender1 libxtst6 fonts-liberation libappindicator3-1 \
+    chromium chromium-driver
 
-# Zet Chromium en chromedriver in PATH
-ENV CHROME_BIN=/usr/bin/chromium
-ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
+# Set environment variables
+ENV PORT 8080
+ENV PYTHONUNBUFFERED True
+ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS false
 
-# Installeer pip packages
+# Install Python requirements
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# SpaCy Nederlands model downloaden
-RUN python -m spacy download nl_core_news_sm
-
-# Voeg alles toe
+# Copy app
 COPY . /app
 WORKDIR /app
 
-# Streamlit config (maakt het openbaar voor Cloud Run)
-ENV PORT 8080
-EXPOSE 8080
+# Expose correct port
+EXPOSE $PORT
 
-CMD ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]
+# Streamlit configuration
+ENV STREAMLIT_SERVER_HEADLESS true
+ENV STREAMLIT_SERVER_PORT $PORT
+ENV STREAMLIT_SERVER_ENABLECORS false
+ENV STREAMLIT_SERVER_ENABLEXSRC false
+ENV STREAMLIT_SERVER_BASE_URL_PATH ""
+
+# Run Streamlit
+CMD ["streamlit", "run", "app.py"]
