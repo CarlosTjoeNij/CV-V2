@@ -1,5 +1,5 @@
 [nix]
-packages = ["python311", "chromium", "chromedriver", "wget", "libgconf-2-4", "libappindicator3-1"]
+packages = ["python311", "chromium", "chromedriver", "wget", "libgconf-2-4", "libappindicator3-1", "fonts-liberation"]
 
 [phases.setup]
 commands = [
