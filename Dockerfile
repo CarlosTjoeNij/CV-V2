@@ -6,13 +6,6 @@ RUN apt-get update && apt-get install -y \
     libnss3 libgconf-2-4 libxi6 libgl1 libxrender1 libxtst6 fonts-liberation libappindicator3-1 \
     chromium chromium-driver
 
-# Download juiste chromedriver versie
-ENV CHROMEDRIVER_VERSION=138.0.7204.96
-RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip \
-    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
-    && rm /tmp/chromedriver.zip \
-    && chmod +x /usr/local/bin/chromedriver
-
 # Set environment variables
 ENV PORT 8080
 ENV PYTHONUNBUFFERED True
