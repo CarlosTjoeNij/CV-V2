@@ -1,17 +1,12 @@
 [nix]
 buildInputs = [
-  "python311.withPackages (ps: with ps; [ pip setuptools wheel ])",
-  "chromium",
-  "chromedriver",
-  "curl",
-  "unzip"
+  "python311.withPackages (ps: with ps; [pip])"
+  "chromium"
+  "chromedriver"
 ]
 
 [phases.install]
-cmds = [
-  "pip install -r requirements.txt",
-  "python -m spacy download nl_core_news_sm"
-]
+cmds = ["pip install -r requirements.txt"]
 
 [start]
-cmd = "streamlit run app.py --server.headless true"
+cmd = "streamlit run app.py --server.headless true --server.port $PORT"
