@@ -1,5 +1,4 @@
 [nix]
-# Installeer python, chromium en chromedriver via nix
 packages = ["python311", "chromium", "chromedriver"]
 
 [phases.install]
