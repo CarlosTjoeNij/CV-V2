@@ -4,6 +4,7 @@ selenium
 beautifulsoup4
 numpy
 PyMuPDF
+webdriver-manager
 nltk
 scikit-learn
 spacy
