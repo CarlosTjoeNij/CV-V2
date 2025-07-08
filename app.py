@@ -102,7 +102,7 @@ def scrape_jobs():
 
     # Haal totaal aantal pagina's dynamisch
     total_pages = get_total_pages(driver, wait)
-    st.write(f"🔢 Totale aantal pagina’s: {total_pages}")
+    st.write(f"🔢 Totaal aantal pagina’s: {total_pages}")
 
     # Ga terug naar pagina 1
     try:
@@ -290,12 +290,12 @@ def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=15):
     return word_scores[:top_n]
 
 # --- Streamlit UI ---
-st.title("CV-Vacature Matcher")
+st.title("CV-Vacature Matcher | Flextender")
 
-uploaded_file = st.file_uploader("Upload je CV als PDF", type="pdf")
+uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf")
 
 if uploaded_file:
-    with st.spinner("Vacatures ophalen en verwerken, even geduld..."):
+    with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren"):
         df = scrape_jobs()
     st.success(f"✅ {len(df)} vacatures verzameld.")
 
