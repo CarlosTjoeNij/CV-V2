@@ -27,36 +27,6 @@ import spacy
 
 nltk.download('stopwords')
 
-# --- Mapping van vakgebied naam naar checkbox ID ---
-DISCIPLINE_MAP = {
-    "Administratief/Secretarieel": "O8180321107CF2030CB80880B9234CB47",
-    "Advisering/Consultancy": "O76AEE0ABC0BF1B5291B18A6DA4006F81",
-    "Automatisering/ICT": "OC5E90DD7C1CE4293606E03076796A693",
-    "Bestuurlijk": "O07077794B189F68466FBF73FF2C2CF0D",
-    "Bouwkunde/Civiele Techniek": "O33BC4F088224DA58BF70A52EB2141EC1",
-    "Brandweer": "OA5FB1723F8CAEAC9C98FF05194351AFF",
-    "Buitendienst/Groenvoorziening": "O5144073122B126D3C44C08860C421791",
-    "Burger-/Publiekszaken": "OF02E3D8D1EFA4C8D942D507620D382D4",
-    "Dienstverlening/Facilitair": "O0C3DAD0D98D1D844EEB8ED03C8F8B52D",
-    "Duurzaamheid": "OE29DA6AE9C4E6C01C97C9ADD5972B040",
-    "Financieel/Economisch": "OE8F20834AE9D90B2A2E0AADFE517F080",
-    "Griffier": "O12162F6BAB5A03F4C9AEBC547A7D7667",
-    "Juridisch": "OFF5E1522BF462B7657ED9ACDCBF91AC5",
-    "Mobiliteit": "O73FE9FFFD3AD9DB255A3FD1268598D7C",
-    "Onderwijs": "O8F9ACE87664DFF37F3B0436D5974A56E",
-    "Openbare orde en veiligheid": "OAB68B3A8F7BB26EC7D15D803213FD368",
-    "P&O/HR": "OFB07291A135FD5179602A32A46F63286",
-    "Projectmanagement": "OA555698405794E40DBDAEC8242D04D75",
-    "Ruimtelijke ordening/Milieu": "O29634EE79B2A62D0F380B9AFC4AE53C9",
-    "Sociaal domein": "O1A621AC1F0150933FF2393E208B27BE5",
-    "Sport/Recreatie/Wetenschap/Cultuur": "O3289186A02E6757970A5F1ACD95E1C9F",
-    "Vergunningverlening": "O0F949218A41226EA291A559AE14B71C5",
-    "Verkoop/Inkoop": "O260A5BBECFB98E44896E9F938F8DFCBF",
-    "Voorlichting/Communicatie": "OB2DBE757911763F2D92EB0DC6CDA47E3",
-    "Welzijn/Zorg/Jeugd": "O4C896816E7588A340A0152E669ABB45F"
-}
-
-
 # --- Functie om paginanummers te verzamelen ---
 def get_total_pages(driver, wait):
     max_page = 1
@@ -106,7 +76,7 @@ def get_total_pages(driver, wait):
     return max_page
 
 # --- Scrape functie, draait pas als PDF geupload is ---
-def scrape_jobs(selected_ids):
+def scrape_jobs():
     options = Options()
     options.binary_location = "/usr/bin/google-chrome"  
     options.add_argument("--headless=new")
@@ -124,19 +94,6 @@ def scrape_jobs(selected_ids):
     driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["username"])
     driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["password"], Keys.ENTER)
     time.sleep(5)
-
-    for checkbox_id in selected_ids:
-        try:
-            checkbox = driver.find_element(By.CSS_SELECTOR, f"input.form-check-input[value='{checkbox_id}']")
-            if not checkbox.is_selected():
-                driver.execute_script("arguments[0].click();", checkbox)
-        except Exception as e:
-            st.warning(f"⚠️ Kon checkbox voor discipline {checkbox_id} niet vinden: {e}")
-
-    # Wacht en filter opnieuw
-    time.sleep(2)
-    driver.find_element(By.CSS_SELECTOR, "button.btn-primary").click()  # Filterknop
-    time.sleep(3)
 
     # Naar aanbevolen vacatures
     driver.get("https://app.flextender.nl/supplier/jobs/recommended")
@@ -335,19 +292,11 @@ def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=15):
 # --- Streamlit UI ---
 st.title("CV-Vacature Matcher | Flextender")
 
-selected_disciplines = st.multiselect(
-    "Kies één of meerdere vakgebieden om te filteren",
-    options=list(DISCIPLINE_MAP.keys()),
-    default=["Automatisering/ICT"]
-)
-
-
 uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf")
 
 if uploaded_file:
-    selected_ids = [DISCIPLINE_MAP[name] for name in selected_disciplines]
     with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren"):
-        df = scrape_jobs(selected_ids)
+        df = scrape_jobs()
     st.success(f"✅ {len(df)} vacatures verzameld.")
 
     cv_text = extract_text_from_pdf(uploaded_file)
