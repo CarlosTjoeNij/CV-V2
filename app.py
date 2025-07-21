@@ -297,7 +297,7 @@ uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf")
 # --- Streamlit UI ---
 st.title("CV-Vacature Matcher | Flextender")
 
-uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf")
+uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf", key="cv_upload")
 
 if uploaded_file:
     st.success("📄 CV succesvol geüpload!")
