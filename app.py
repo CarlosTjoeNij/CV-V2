@@ -289,10 +289,6 @@ def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=15):
     
     return word_scores[:top_n]
 
-# --- Streamlit UI ---
-st.title("CV-Vacature Matcher | Flextender")
-
-uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf")
 
 # --- Streamlit UI ---
 st.title("CV-Vacature Matcher | Flextender")
@@ -320,10 +316,10 @@ if uploaded_file:
 
         if not matched_df.empty:
             top_job = matched_df.iloc[0]
-            st.subheader(f"🏆 Beste match: {top_job['Titel']} bij {top_job['Opdrachtgever']}")
+            st.subheader(f"Beste match: {top_job['Titel']} bij {top_job['Opdrachtgever']}")
             keywords = get_top_keywords_for_match(cv_text_clean, top_job["clean_description"], tfidf)
 
-            st.write("**🔑 Belangrijkste overeenkomende woorden:**")
+            st.write("**Belangrijkste overeenkomende woorden:**")
             for word, score in keywords:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
