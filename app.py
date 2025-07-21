@@ -307,10 +307,13 @@ if uploaded_file:
     # Detecteer of CV nieuw is (op basis van naam)
     new_cv_uploaded = uploaded_file.name != st.session_state["cv_name"]
 
-    # Als nieuw CV, opnieuw scrapen
+    @st.cache_data(show_spinner=False)
+    def cached_scrape():
+        return scrape_jobs()
+
     if st.session_state["vacature_data"] is None or new_cv_uploaded:
         with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren..."):
-            df = scrape_jobs()
+            df = cached_scrape()
 
         if df is not None and not df.empty:
             st.session_state["vacature_data"] = df
