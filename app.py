@@ -292,11 +292,23 @@ def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=15):
 # --- Streamlit UI ---
 st.title("CV-Vacature Matcher | Flextender")
 
+@st.cache_data(show_spinner="Scrapen van vacatures...")
+def cached_scrape_jobs():
+    return scrape_jobs()
+
+# Upload UI
 uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf")
 
-if uploaded_file:
-    with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren"):
-        df = scrape_jobs()
+# Optioneel: knop om opnieuw te scrapen
+if st.button("Forceer opnieuw scrapen"):
+    st.cache_data.clear()
+    st.success("✅ Cache geleegd. Upload een CV om opnieuw te scrapen.")
+
+# Alleen verder als bestand is geüpload
+if uploaded_file is not None:
+    with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren..."):
+        df = cached_scrape_jobs()
+
     st.success(f"✅ {len(df)} vacatures verzameld.")
 
     cv_text = extract_text_from_pdf(uploaded_file)
