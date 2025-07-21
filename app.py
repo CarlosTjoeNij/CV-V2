@@ -295,36 +295,53 @@ st.title("CV-Vacature Matcher | Flextender")
 
 uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf", key="cv_upload")
 
+# Sessie-initialisatie
+if "vacature_data" not in st.session_state:
+    st.session_state["vacature_data"] = None
+if "cv_name" not in st.session_state:
+    st.session_state["cv_name"] = None
+
 if uploaded_file:
     st.success("📄 CV succesvol geüpload!")
 
-    with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren..."):
-        df = scrape_jobs()
+    # Detecteer of CV nieuw is (op basis van naam)
+    new_cv_uploaded = uploaded_file.name != st.session_state["cv_name"]
 
-    if df is not None and not df.empty:
-        st.success(f"✅ {len(df)} vacatures verzameld.")
+    # Als nieuw CV, opnieuw scrapen
+    if st.session_state["vacature_data"] is None or new_cv_uploaded:
+        with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren..."):
+            df = scrape_jobs()
 
-        # Verwerk het CV
-        cv_text = extract_text_from_pdf(uploaded_file)
-        cv_text_clean = clean_text_nl(cv_text)
-
-        # Matchen
-        matched_df, tfidf = match_jobs(cv_text_clean, df)
-
-        st.write("### 🔍 Top Matches:")
-        st.dataframe(matched_df[["Titel", "Opdrachtgever", "score", "Link"]].head(10))
-
-        if not matched_df.empty:
-            top_job = matched_df.iloc[0]
-            st.subheader(f"Beste match: {top_job['Titel']} bij {top_job['Opdrachtgever']}")
-            keywords = get_top_keywords_for_match(cv_text_clean, top_job["clean_description"], tfidf)
-
-            st.write("**Belangrijkste overeenkomende woorden:**")
-            for word, score in keywords:
-                st.write(f"- {word} (score: {score:.3f})")
+        if df is not None and not df.empty:
+            st.session_state["vacature_data"] = df
+            st.session_state["cv_name"] = uploaded_file.name
+            st.success(f"✅ {len(df)} vacatures verzameld.")
         else:
-            st.warning("⚠️ Geen geschikte matches gevonden.")
+            st.error("❌ Geen vacatures gevonden tijdens het scrapen.")
+            st.stop()
     else:
-        st.error("❌ Geen vacatures gevonden tijdens het scrapen.")
+        df = st.session_state["vacature_data"]
+        st.info(f"ℹ️ Vacatures geladen uit sessiegeheugen ({len(df)} vacatures).")
+
+    # Verwerk het CV
+    cv_text = extract_text_from_pdf(uploaded_file)
+    cv_text_clean = clean_text_nl(cv_text)
+
+    # Matchen
+    matched_df, tfidf = match_jobs(cv_text_clean, df)
+
+    st.write("### 🔍 Top Matches:")
+    st.dataframe(matched_df[["Titel", "Opdrachtgever", "score", "Link"]].head(10))
+
+    if not matched_df.empty:
+        top_job = matched_df.iloc[0]
+        st.subheader(f"Beste match: {top_job['Titel']} bij {top_job['Opdrachtgever']}")
+        keywords = get_top_keywords_for_match(cv_text_clean, top_job["clean_description"], tfidf)
+
+        st.write("**Belangrijkste overeenkomende woorden:**")
+        for word, score in keywords:
+            st.write(f"- {word} (score: {score:.3f})")
+    else:
+        st.warning("⚠️ Geen geschikte matches gevonden.")
 else:
     st.info("📤 Upload eerst een CV (PDF) om te starten.")
