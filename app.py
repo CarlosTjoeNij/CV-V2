@@ -291,40 +291,32 @@ def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=15):
 
 
 # --- Streamlit UI ---
-st.title("CV-Vacature Matcher | Flextender")
+st.title("CV‑Vacature Matcher | Flextender")
 
-uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf", key="cv_upload")
-
-# Sessie-initialisatie
-if "vacature_data" not in st.session_state:
-    st.session_state["vacature_data"] = None
-if "cv_name" not in st.session_state:
-    st.session_state["cv_name"] = None
+uploaded_file = st.file_uploader("Upload je CV (PDF)", type="pdf", key="cv_upload")
+st.write(f"🧰 SessionState inhoud: cv_name={st.session_state.get('cv_name')}, vacature_data={'ja' if 'vacature_data' in st.session_state else 'nee'}")
 
 if uploaded_file:
-    st.success("📄 CV succesvol geüpload!")
+    if st.session_state.get("cv_name") != uploaded_file.name:
+        st.session_state["cv_name"] = uploaded_file.name
+        # Verwijder oude vacature_data, want nieuw CV → nieuwe scrape
+        if "vacature_data" in st.session_state:
+            del st.session_state["vacature_data"]
 
-    # Detecteer of CV nieuw is (op basis van naam)
-    new_cv_uploaded = uploaded_file.name != st.session_state["cv_name"]
-
-    @st.cache_data(show_spinner=False)
-    def cached_scrape():
-        return scrape_jobs()
-
-    if st.session_state["vacature_data"] is None or new_cv_uploaded:
-        with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren..."):
-            df = cached_scrape()
-
-        if df is not None and not df.empty:
-            st.session_state["vacature_data"] = df
-            st.session_state["cv_name"] = uploaded_file.name
-            st.success(f"✅ {len(df)} vacatures verzameld.")
-        else:
-            st.error("❌ Geen vacatures gevonden tijdens het scrapen.")
-            st.stop()
+    if "vacature_data" not in st.session_state:
+        st.info("✳️ Eerste run of nieuw CV, we gaan scrapen...")
+        with st.spinner("Vacatures scrapen... dit kan even duren"):
+            df = scrape_jobs()
+        st.session_state["vacature_data"] = df
+        st.success(f"✅ {len(df) if df is not None else 0} vacatures verzameld.")
     else:
         df = st.session_state["vacature_data"]
-        st.info(f"ℹ️ Vacatures geladen uit sessiegeheugen ({len(df)} vacatures).")
+        st.info(f"ℹ️ Vacatures uit sessie geladen: {len(df)} gevonden.")
+
+    # Check of df ok is
+    if df is None or df.empty:
+        st.error("❌ Scrape-data is leeg of mislukt.")
+        st.stop()
 
     # Verwerk het CV
     cv_text = extract_text_from_pdf(uploaded_file)
@@ -333,18 +325,22 @@ if uploaded_file:
     # Matchen
     matched_df, tfidf = match_jobs(cv_text_clean, df)
 
-    st.write("### 🔍 Top Matches:")
+    st.write("### 🔍 Top Matches")
     st.dataframe(matched_df[["Titel", "Opdrachtgever", "score", "Link"]].head(10))
 
     if not matched_df.empty:
         top_job = matched_df.iloc[0]
-        st.subheader(f"Beste match: {top_job['Titel']} bij {top_job['Opdrachtgever']}")
+        st.subheader(f"Beste match: {top_job['Titel']} bij {top_job['Opdrachtgever']} (score={top_job['score']:.3f})")
         keywords = get_top_keywords_for_match(cv_text_clean, top_job["clean_description"], tfidf)
-
         st.write("**Belangrijkste overeenkomende woorden:**")
         for word, score in keywords:
-            st.write(f"- {word} (score: {score:.3f})")
+            st.write(f"- {word} ({score:.3f})")
     else:
-        st.warning("⚠️ Geen geschikte matches gevonden.")
+        st.warning("⚠️ Geen matches gevonden.")
+
 else:
     st.info("📤 Upload eerst een CV (PDF) om te starten.")
+
+# Voeg dit onderaan toe om sessiestatus te debuggen
+st.write("---")
+st.write("Debug Session State:", dict(st.session_state))
