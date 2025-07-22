@@ -321,7 +321,7 @@ if uploaded_file:
             st.stop()
     else:
         df = st.session_state["vacature_data"]
-        st.info(f"ℹ️ Vacatures geladen uit sessiegeheugen ({len(df)} vacatures).")
+        st.info(f"{len(df)} vacatures.")
 
     # Verwerk CV
     cv_text = extract_text_from_pdf(uploaded_file)
@@ -329,7 +329,7 @@ if uploaded_file:
 
     matched_df, tfidf = match_jobs(cv_text_clean, df)
 
-    st.write("### 🔍 Top Matches:")
+    st.write("### Top Matches:")
     st.dataframe(matched_df[["Titel", "Opdrachtgever", "score", "Link"]].head(10))
 
     if not matched_df.empty:
@@ -343,4 +343,4 @@ if uploaded_file:
     else:
         st.warning("⚠️ Geen geschikte matches gevonden.")
 else:
-    st.info("📤 Upload eerst een CV om te starten.")
+    st.info("Upload eerst een CV om te starten.")
