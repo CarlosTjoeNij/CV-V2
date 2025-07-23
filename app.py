@@ -301,10 +301,10 @@ if "cv_name" not in st.session_state:
     st.session_state["cv_name"] = None
 
 # Cache scrapingresultaat
-@st.cache_data(show_spinner=False)
+@st.cache_data(ttl=21600, show_spinner=False)
 def cached_scrape():
     return scrape_jobs()
-
+    
 if uploaded_file:
     new_cv_uploaded = uploaded_file.name != st.session_state["cv_name"]
 
