@@ -91,8 +91,14 @@ def scrape_jobs():
     # Inloggen
     driver.get("https://app.flextender.nl/")
     time.sleep(2)
-    driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["username"])
-    driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["password"], Keys.ENTER)
+    try:
+        driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["username"])
+        driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["password"], Keys.ENTER)
+
+    except Exception as e:
+        st.error("❌ Inloggen mislukt op Flextender. Check credentials of browserconfig.")
+        st.stop()
+    
     time.sleep(5)
 
     # Naar aanbevolen vacatures
