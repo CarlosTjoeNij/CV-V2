@@ -300,39 +300,28 @@ st.title("CV-Vacature Matcher | Flextender")
 
 uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf", key="cv_upload")
 
-# Initieer sessiestatus
-if "vacature_data" not in st.session_state:
-    st.session_state["vacature_data"] = None
-if "cv_name" not in st.session_state:
-    st.session_state["cv_name"] = None
-
-# Cache scrapingresultaat
-@st.cache_data(ttl=21600, show_spinner=False)
+# Cache scrapingresultaat op schijf – blijft actief zolang de container leeft (en max 6 uur)
+@st.cache_data(ttl=21600, persist="disk", show_spinner=False)
 def cached_scrape():
     return scrape_jobs()
-    
+
 if uploaded_file:
-    new_cv_uploaded = uploaded_file.name != st.session_state["cv_name"]
+    st.success("📄 CV succesvol geüpload!")
 
-    if st.session_state["vacature_data"] is None or new_cv_uploaded:
-        with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren..."):
-            df = cached_scrape()
+    with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren..."):
+        df = cached_scrape()
 
-        if df is not None and not df.empty:
-            st.session_state["vacature_data"] = df
-            st.session_state["cv_name"] = uploaded_file.name
-            st.success(f"✅ {len(df)} vacatures verzameld.")
-        else:
-            st.error("❌ Geen vacatures gevonden.")
-            st.stop()
+    if df is not None and not df.empty:
+        st.success(f"✅ {len(df)} vacatures verzameld.")
     else:
-        df = st.session_state["vacature_data"]
-        st.info(f"{len(df)} vacatures.")
+        st.error("❌ Geen vacatures gevonden.")
+        st.stop()
 
     # Verwerk CV
     cv_text = extract_text_from_pdf(uploaded_file)
     cv_text_clean = clean_text_nl(cv_text)
 
+    # Match
     matched_df, tfidf = match_jobs(cv_text_clean, df)
 
     st.write("### Top Matches:")
@@ -349,4 +338,5 @@ if uploaded_file:
     else:
         st.warning("⚠️ Geen geschikte matches gevonden.")
 else:
-    st.info("Upload eerst een CV om te starten.")
+    st.info("Upload eerst een CV (PDF) om te starten.")
+
