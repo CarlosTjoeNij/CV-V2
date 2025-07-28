@@ -319,7 +319,7 @@ if uploaded_file:
         df = cached_scrape()
 
     if df is not None and not df.empty:
-        st.success(f"✅ {len(df)} vacatures verzameld. De topmatches worden hieronder getoond...")
+        st.success(f"✅ {len(df)} vacatures verzameld. De topmatches zullen hieronder worden getoond...")
     else:
         st.error("❌ Geen vacatures gevonden.")
         st.stop()
