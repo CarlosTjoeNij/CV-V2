@@ -2,6 +2,7 @@ import os
 import time
 import pandas as pd
 from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
@@ -77,15 +78,13 @@ def get_total_pages(driver, wait):
 
 # --- Scrape functie, draait pas als PDF geupload is ---
 def scrape_jobs():
-    options = Options()
-    options.binary_location = "/usr/bin/google-chrome"  
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
 
-    service = Service(executable_path="/usr/local/bin/chromedriver")  
-
-    driver = webdriver.Chrome(service=service, options=options)
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     wait = WebDriverWait(driver, 10)
 
     # Inloggen
@@ -246,23 +245,22 @@ dutch_stopwords = set(stopwords.words('dutch') + extra_stopwoorden + stopwords.w
 
 nlp = spacy.load("nl_core_news_sm")
 
-def filter_relevant_pos_nl(text):
-    doc = nlp(text)
-    # Keep nouns, adjectives, adverbs
+def clean_text_nl(text):
+    # Verwijder speciale tekens
+    text = re.sub(r"[^a-zA-ZÀ-ÿ\s]", " ", text)
+    doc = nlp(text.lower())
+
     relevant_pos = {"NOUN", "PROPN", "ADJ", "ADV"}
-    filtered_tokens = [token.text for token in doc if token.pos_ in relevant_pos]
+    filtered_tokens = [
+        token.lemma_
+        for token in doc
+        if token.pos_ in relevant_pos and token.lemma_ not in dutch_stopwords
+    ]
+
     return " ".join(filtered_tokens)
 
-def clean_text_nl(text):
-    text = re.sub(r"[^a-zA-ZÀ-ÿ\s]", "", text)  # Alleen letters en accenten
-    words = text.lower().split()
-    words = [word for word in words if word not in dutch_stopwords]
-    words_all = [word for word in words if word not in ENGLISH_STOP_WORDS]
-    return " ".join(words_all)
-
 def match_jobs(cv_text, df):
-    df["clean_description"] = df["Beschrijving"].apply(clean_text_nl)
-    df["cleaner_description"] = df["clean_description"].apply(filter_relevant_pos_nl)
+    df["cleaner_description"] = df["Beschrijving"].apply(clean_text_nl)
     all_texts = [cv_text] + df["cleaner_description"].tolist()
   
     tfidf = TfidfVectorizer()
@@ -273,7 +271,7 @@ def match_jobs(cv_text, df):
     df["score"] = similarities
     return df.sort_values(by="score", ascending=False), tfidf
 
-def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=15):
+def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=8):
     # Vectoriseer CV en job description
     tfidf_matrix = tfidf_vectorizer.transform([cv_text, job_desc])
     
@@ -298,6 +296,15 @@ def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=15):
 # --- Streamlit UI ---
 st.title("CV-Vacature Matcher | Flextender")
 
+nederlandse_provincies = [
+    "",  # voor 'geen selectie'
+    "Drenthe", "Flevoland", "Friesland", "Gelderland", "Groningen",
+    "Limburg", "Noord-Brabant", "Noord-Holland", "Overijssel",
+    "Utrecht", "Zeeland", "Zuid-Holland"
+    ]
+
+gekozen_provincie = st.selectbox("Filter op provincie (optioneel)", nederlandse_provincies)
+
 uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf", key="cv_upload")
 
 # Cache scrapingresultaat op schijf – blijft actief zolang de container leeft (en max 6 uur)
@@ -312,7 +319,7 @@ if uploaded_file:
         df = cached_scrape()
 
     if df is not None and not df.empty:
-        st.success(f"✅ {len(df)} vacatures verzameld.")
+        st.success(f"✅ {len(df)} vacatures verzameld. De topmatches worden hieronder getoond...")
     else:
         st.error("❌ Geen vacatures gevonden.")
         st.stop()
@@ -324,14 +331,17 @@ if uploaded_file:
     # Match
     matched_df, tfidf = match_jobs(cv_text_clean, df)
 
+    # Filter matched_df op basis van selectie
+    if gekozen_provincie:
+        matched_df = matched_df[matched_df["Regio"].str.contains(gekozen_provincie, case=False, na=False)]
+
     st.write("### Top Matches:")
-    #st.dataframe(matched_df[["Titel", "Opdrachtgever", "score", "Link"]].head(10))
-    st.dataframe(matched_df.head(10))
+    st.dataframe(matched_df[["Titel", "Opdrachtgever", "score", "Regio", "Link"]].head(10))
 
     if not matched_df.empty:
         top_job = matched_df.iloc[0]
         st.subheader(f"Beste match: {top_job['Titel']} bij {top_job['Opdrachtgever']}")
-        keywords = get_top_keywords_for_match(cv_text_clean, top_job["clean_description"], tfidf)
+        keywords = get_top_keywords_for_match(cv_text_clean, top_job["cleaner_description"], tfidf)
 
         st.write("**Belangrijkste overeenkomende woorden:**")
         for word, score in keywords:
@@ -340,4 +350,3 @@ if uploaded_file:
         st.warning("⚠️ Geen geschikte matches gevonden.")
 else:
     st.info("Upload eerst een CV (PDF) om te starten.")
-
