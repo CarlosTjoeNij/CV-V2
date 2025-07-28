@@ -325,7 +325,8 @@ if uploaded_file:
     matched_df, tfidf = match_jobs(cv_text_clean, df)
 
     st.write("### Top Matches:")
-    st.dataframe(matched_df[["Titel", "Opdrachtgever", "score", "Link"]].head(10))
+    #st.dataframe(matched_df[["Titel", "Opdrachtgever", "score", "Link"]].head(10))
+    st.dataframe(matched_df.head(10))
 
     if not matched_df.empty:
         top_job = matched_df.iloc[0]
