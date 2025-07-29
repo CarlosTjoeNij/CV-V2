@@ -90,6 +90,7 @@ def scrape_all_jobs():
         wait = WebDriverWait(driver, 15)
 
         driver.get("https://login.striive.com/")
+        driver.set_window_size(1920, 1080)
         time.sleep(2)
         driver.find_element(By.ID, "email").send_keys(st.secrets["striive"]["username"])
         driver.find_element(By.ID, "password").send_keys(st.secrets["striive"]["password"])
