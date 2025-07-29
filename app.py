@@ -78,7 +78,15 @@ def get_total_pages(driver, wait):
 
 def scrape_all_jobs():
     def scrape_striive():
-        driver = webdriver.Chrome()
+        # Headless & Cloud Run compatible browser
+        options = Options()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920x1080")
+    
+        driver = webdriver.Chrome(options=options)
         wait = WebDriverWait(driver, 15)
 
         driver.get("https://login.striive.com/")
