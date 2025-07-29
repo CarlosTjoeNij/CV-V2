@@ -76,116 +76,204 @@ def get_total_pages(driver, wait):
 
     return max_page
 
-# --- Scrape functie, draait pas als PDF geupload is ---
-def scrape_jobs():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
+def scrape_all_jobs():
+    def scrape_striive():
+        driver = webdriver.Chrome()
+        wait = WebDriverWait(driver, 15)
 
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    wait = WebDriverWait(driver, 10)
-
-    # Inloggen
-    driver.get("https://app.flextender.nl/")
-    time.sleep(2)
-    try:
-        driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["username"])
-        driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["password"], Keys.ENTER)
-
-    except Exception as e:
-        st.error("❌ Inloggen mislukt op Flextender. Check credentials of browserconfig.")
-        st.stop()
-    
-    time.sleep(5)
-
-    # Naar aanbevolen vacatures
-    driver.get("https://app.flextender.nl/supplier/jobs/recommended")
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-jobsummarywidget")))
-    time.sleep(3)
-
-    # Haal totaal aantal pagina's dynamisch
-    total_pages = get_total_pages(driver, wait)
-    st.write(f"🔢 Totaal aantal pagina’s: {total_pages}")
-
-    # Ga terug naar pagina 1
-    try:
-        paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "span.target-jobsearchresults-page-1")))
-        paginator.click()
+        driver.get("https://login.striive.com/")
         time.sleep(2)
-    except Exception as e:
-        st.warning(f"⚠️ Kon niet terug naar pagina 1: {e}")
-
-    data = []
-
-    for page_num in range(1, total_pages + 1):
-        st.write(f"🔄 Verwerk pagina {page_num}")
+        driver.find_element(By.ID, "email").send_keys(st.secrets["striive"]["username"])
+        driver.find_element(By.ID, "password").send_keys(st.secrets["striive"]["password"])
+        driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+        time.sleep(5)
 
         try:
-            paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, f"span.target-jobsearchresults-page-{page_num}")))
+            opdrachten_link = wait.until(EC.element_to_be_clickable((
+                By.XPATH, "//a[contains(@href, '/inbox')]//span[contains(text(), 'Opdrachten')]"
+            )))
+            opdrachten_link.click()
+        except Exception as e:
+            print("❌ Opdrachten link niet gevonden:", e)
+            driver.quit()
+            return pd.DataFrame()
+
+        scroll_container = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.p-scroller")))
+
+        vacature_links_dict = {}
+        repeats = 0
+        max_repeats = 5
+
+        while repeats < max_repeats:
+            job_elements = driver.find_elements(By.CSS_SELECTOR, "div.job-request-row")
+
+            new_count = 0
+            for div in job_elements:
+                try:
+                    title = div.find_element(By.CSS_SELECTOR, "[data-testid='listJobRequestTitle']").text.strip()
+                    opdrachtgever = div.find_element(By.CSS_SELECTOR, "[data-testid='listClientName']").text.strip()
+                    regio = div.find_element(By.CSS_SELECTOR, "[data-testid='listRegionName']").text.strip()
+                    link = div.find_element(By.CSS_SELECTOR, "a[data-testid='jobRequestDetailLink']").get_attribute("href")
+                    if link not in vacature_links_dict:
+                        vacature_links_dict[link] = {
+                            "Titel": title,
+                            "Opdrachtgever": opdrachtgever,
+                            "Regio": regio,
+                            "Link": link,
+                            "Bron": "Striive"
+                        }
+                        new_count += 1
+                except:
+                    continue
+
+            if new_count == 0:
+                repeats += 1
+            else:
+                repeats = 0
+
+            driver.execute_script("arguments[0].scrollBy(0, 1000);", scroll_container)
+            time.sleep(1.2)
+
+        results = []
+        for vacature in vacature_links_dict.values():
+            try:
+                driver.get(vacature["Link"])
+                try:
+                    desc_elem = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='jobRequestDescription']")))
+                    beschrijving_html = desc_elem.get_attribute("innerHTML").strip()
+                    soup = BeautifulSoup(beschrijving_html, "html.parser")
+                    beschrijving_tekst = soup.get_text(separator="\n").strip()
+                    vacature["Beschrijving"] = beschrijving_tekst
+                except:
+                    vacature["Beschrijving"] = ""
+                results.append(vacature)
+            except:
+                continue
+        st.write(f"Striive vacatures gevonden: {len(results)}")
+        driver.quit()
+        return pd.DataFrame(results)
+
+    def scrape_flextender():
+        chrome_options = Options()
+        chrome_options.add_argument("--headless=new")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        wait = WebDriverWait(driver, 10)
+
+        # Inloggen
+        driver.get("https://app.flextender.nl/")
+        time.sleep(2)
+        try:
+            driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["flextender"]["username"])
+            driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["flextender"]["password"], Keys.ENTER)
+
+        except Exception as e:
+            st.error("❌ Inloggen mislukt op Flextender. Check credentials of browserconfig.")
+            st.stop()
+        
+        time.sleep(5)
+
+        # Naar aanbevolen vacatures
+        driver.get("https://app.flextender.nl/supplier/jobs/recommended")
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-jobsummarywidget")))
+        time.sleep(3)
+
+        # Haal totaal aantal pagina's dynamisch
+        total_pages = get_total_pages(driver, wait)
+        st.write(f"FlexTender vacatures aantal pagina’s: {total_pages}")
+
+        # Ga terug naar pagina 1
+        try:
+            paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "span.target-jobsearchresults-page-1")))
             paginator.click()
             time.sleep(2)
         except Exception as e:
-            st.warning(f"⚠️ Kan pagina {page_num} niet openen: {e}")
-            continue
+            st.warning(f"⚠️ Kon niet terug naar pagina 1: {e}")
 
-        try:
-            page_divs = wait.until(EC.presence_of_all_elements_located((
-                By.CSS_SELECTOR, f"div.css-jobsummarywidget.target-jobsearchresults-page-{page_num}"
-            )))
-        except Exception as e:
-            st.warning(f"❌ Geen vacatures gevonden op pagina {page_num}: {e}")
-            continue
+        data = []
 
-        st.write(f"🔎 {len(page_divs)} vacatures gevonden op pagina {page_num}")
+        for page_num in range(1, total_pages + 1):
+            st.write(f"🔄 Verwerk pagina {page_num}")
 
-        for div in page_divs:
             try:
-                card = div.find_element(By.CSS_SELECTOR, ".js-widget-content")
-                link_elem = card.find_element(By.CSS_SELECTOR, "a.job-summary-clickable")
-                link = link_elem.get_attribute("href")
-
-                titel = card.find_element(By.CSS_SELECTOR, ".flx-jobsummary-title div").text.strip()
-                opdrachtgever = card.find_element(By.CSS_SELECTOR, ".flx-jobsummary-client").text.strip()
-
-                vacature = {
-                    "pagina": page_num,
-                    "Titel": titel,
-                    "Opdrachtgever": opdrachtgever,
-                    "Link": link
-                }
-
-                caption_fields = card.find_elements(By.CSS_SELECTOR, ".caption-field")
-                for field in caption_fields:
-                    try:
-                        label = field.find_element(By.CSS_SELECTOR, ".caption").text.strip()
-                        value = field.find_element(By.CSS_SELECTOR, ".field").text.strip()
-                        vacature[label] = value
-                    except:
-                        continue
-
-                # Beschrijving ophalen via nieuwe tab
-                driver.execute_script("window.open('');")
-                driver.switch_to.window(driver.window_handles[1])
-                driver.get(link)
-                try:
-                    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-formattedjobdescription")))
-                    desc_html = driver.find_element(By.CSS_SELECTOR, "div.css-formattedjobdescription").get_attribute("innerHTML")
-                    vacature["Beschrijving"] = desc_html
-                except:
-                    vacature["Beschrijving"] = "Geen beschrijving gevonden"
-                driver.close()
-                driver.switch_to.window(driver.window_handles[0])
-
-                data.append(vacature)
-
+                paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, f"span.target-jobsearchresults-page-{page_num}")))
+                paginator.click()
+                time.sleep(2)
             except Exception as e:
-                st.warning(f"⚠️ Fout bij vacature verwerken: {e}")
+                st.warning(f"⚠️ Kan pagina {page_num} niet openen: {e}")
                 continue
 
-    driver.quit()
-    return pd.DataFrame(data)
+            try:
+                page_divs = wait.until(EC.presence_of_all_elements_located((
+                    By.CSS_SELECTOR, f"div.css-jobsummarywidget.target-jobsearchresults-page-{page_num}"
+                )))
+            except Exception as e:
+                st.warning(f"❌ Geen vacatures gevonden op pagina {page_num}: {e}")
+                continue
+
+            #st.write(f"🔎 {len(page_divs)} vacatures gevonden op pagina {page_num}")
+
+            for div in page_divs:
+                try:
+                    card = div.find_element(By.CSS_SELECTOR, ".js-widget-content")
+                    link_elem = card.find_element(By.CSS_SELECTOR, "a.job-summary-clickable")
+                    link = link_elem.get_attribute("href")
+
+                    titel = card.find_element(By.CSS_SELECTOR, ".flx-jobsummary-title div").text.strip()
+                    opdrachtgever = card.find_element(By.CSS_SELECTOR, ".flx-jobsummary-client").text.strip()
+
+                    vacature = {
+                        "pagina": page_num,
+                        "Titel": titel,
+                        "Opdrachtgever": opdrachtgever,
+                        "Link": link
+                    }
+
+                    caption_fields = card.find_elements(By.CSS_SELECTOR, ".caption-field")
+                    for field in caption_fields:
+                        try:
+                            label = field.find_element(By.CSS_SELECTOR, ".caption").text.strip()
+                            value = field.find_element(By.CSS_SELECTOR, ".field").text.strip()
+                            vacature[label] = value
+                        except:
+                            continue
+
+                    # Beschrijving ophalen via nieuwe tab
+                    driver.execute_script("window.open('');")
+                    driver.switch_to.window(driver.window_handles[1])
+                    driver.get(link)
+                    try:
+                        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-formattedjobdescription")))
+                        desc_html = driver.find_element(By.CSS_SELECTOR, "div.css-formattedjobdescription").get_attribute("innerHTML")
+                        vacature["Beschrijving"] = desc_html
+                    except:
+                        vacature["Beschrijving"] = "Geen beschrijving gevonden"
+                    driver.close()
+                    driver.switch_to.window(driver.window_handles[0])
+
+                    data.append(vacature)
+
+                except Exception as e:
+                    st.warning(f"⚠️ Fout bij vacature verwerken: {e}")
+                    continue
+
+        driver.quit()
+        return pd.DataFrame(data)
+    print("🚀 Start scraping Striive...")
+    df_striive = scrape_striive()
+    print(f"✅ Striive: {len(df_striive)} vacatures gevonden")
+
+    print("🚀 Start scraping Flextender...")
+    df_flex = scrape_flextender()
+    print(f"✅ Flextender: {len(df_flex)} vacatures gevonden")
+
+    df_combined = pd.concat([df_striive, df_flex], ignore_index=True)
+    print(f"📊 Totaal gecombineerde vacatures: {len(df_combined)}")
+
+    return df_combined
 
 # --- PDF extractie ---
 def extract_text_from_pdf(pdf_file):
@@ -245,22 +333,23 @@ dutch_stopwords = set(stopwords.words('dutch') + extra_stopwoorden + stopwords.w
 
 nlp = spacy.load("nl_core_news_sm")
 
-def clean_text_nl(text):
-    # Verwijder speciale tekens
-    text = re.sub(r"[^a-zA-ZÀ-ÿ\s]", " ", text)
-    doc = nlp(text.lower())
-
+def filter_relevant_pos_nl(text):
+    doc = nlp(text)
+    # Keep nouns, adjectives, adverbs
     relevant_pos = {"NOUN", "PROPN", "ADJ", "ADV"}
-    filtered_tokens = [
-        token.lemma_
-        for token in doc
-        if token.pos_ in relevant_pos and token.lemma_ not in dutch_stopwords
-    ]
-
+    filtered_tokens = [token.text for token in doc if token.pos_ in relevant_pos]
     return " ".join(filtered_tokens)
 
+def clean_text_nl(text):
+    text = re.sub(r"[^a-zA-ZÀ-ÿ\s]", "", text)  # Alleen letters en accenten
+    words = text.lower().split()
+    words = [word for word in words if word not in dutch_stopwords]
+    words_all = [word for word in words if word not in ENGLISH_STOP_WORDS]
+    return " ".join(words_all)
+
 def match_jobs(cv_text, df):
-    df["cleaner_description"] = df["Beschrijving"].apply(clean_text_nl)
+    df["clean_description"] = df["Beschrijving"].apply(clean_text_nl)
+    df["cleaner_description"] = df["clean_description"].apply(filter_relevant_pos_nl)
     all_texts = [cv_text] + df["cleaner_description"].tolist()
   
     tfidf = TfidfVectorizer()
@@ -294,7 +383,7 @@ def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=8):
     return word_scores[:top_n]
 
 # --- Streamlit UI ---
-st.title("CV-Vacature Matcher | Flextender")
+st.title("CV-Vacature Matcher | Striive & Flextender")
 
 nederlandse_provincies = [
     "",  # voor 'geen selectie'
@@ -305,48 +394,38 @@ nederlandse_provincies = [
 
 gekozen_provincie = st.selectbox("Filter op provincie (optioneel)", nederlandse_provincies)
 
-uploaded_file = st.file_uploader("Upload het CV als PDF", type="pdf", key="cv_upload")
+uploaded_file = st.file_uploader("Upload CV als PDF", type="pdf")
 
 # Cache scrapingresultaat op schijf – blijft actief zolang de container leeft (en max 6 uur)
 @st.cache_data(ttl=21600, persist="disk", show_spinner=False)
 def cached_scrape():
-    return scrape_jobs()
+    return scrape_all_jobs()
 
 if uploaded_file:
-    st.success("📄 CV succesvol geüpload!")
-
     with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren..."):
         df = cached_scrape()
+    st.success(f"✅ In totaal {len(df)} vacatures verzameld. De beste matches zullen hieronder worden weergegeven.")
 
-    if df is not None and not df.empty:
-        st.success(f"✅ {len(df)} vacatures verzameld. De topmatches zullen hieronder worden getoond...")
-    else:
-        st.error("❌ Geen vacatures gevonden.")
-        st.stop()
-
-    # Verwerk CV
     cv_text = extract_text_from_pdf(uploaded_file)
     cv_text_clean = clean_text_nl(cv_text)
 
-    # Match
     matched_df, tfidf = match_jobs(cv_text_clean, df)
+    matched_df['Regio'] = matched_df['Regio'].apply(lambda x: x.split(' - ')[1] if isinstance(x, str) and ' - ' in x else x)
 
     # Filter matched_df op basis van selectie
     if gekozen_provincie:
         matched_df = matched_df[matched_df["Regio"].str.contains(gekozen_provincie, case=False, na=False)]
 
-    st.write("### Top Matches:")
+    st.write("Top Matches:")
     st.dataframe(matched_df[["Titel", "Opdrachtgever", "score", "Regio", "Link"]].head(10))
 
     if not matched_df.empty:
         top_job = matched_df.iloc[0]
-        st.subheader(f"Beste match: {top_job['Titel']} bij {top_job['Opdrachtgever']}")
-        keywords = get_top_keywords_for_match(cv_text_clean, top_job["cleaner_description"], tfidf)
-
-        st.write("**Belangrijkste overeenkomende woorden:**")
+        st.subheader(f"Top match: {top_job['Titel']} bij {top_job['Opdrachtgever']}")
+        keywords = get_top_keywords_for_match(cv_text_clean, top_job["clean_description"], tfidf)
+        
+        st.write("Belangrijkste overeenkomende woorden die bijdragen aan de score:")
         for word, score in keywords:
             st.write(f"- {word} (score: {score:.3f})")
-    else:
-        st.warning("⚠️ Geen geschikte matches gevonden.")
 else:
-    st.info("Upload eerst een CV (PDF) om te starten.")
+    st.info("Upload eerst een CV om de matching te starten.")
