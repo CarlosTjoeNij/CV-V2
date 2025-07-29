@@ -205,7 +205,6 @@ def scrape_all_jobs():
         data = []
 
         for page_num in range(1, total_pages + 1):
-            st.write(f"🔄 Verwerk pagina {page_num}")
 
             try:
                 paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, f"span.target-jobsearchresults-page-{page_num}")))
@@ -268,7 +267,7 @@ def scrape_all_jobs():
                 except Exception as e:
                     st.warning(f"⚠️ Fout bij vacature verwerken: {e}")
                     continue
-
+        st.write(f"Flextender vacatures gevonden: {len(data)}")
         driver.quit()
         return pd.DataFrame(data)
     print("🚀 Start scraping Striive...")
