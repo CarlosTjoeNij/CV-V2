@@ -78,27 +78,25 @@ def get_total_pages(driver, wait):
 
 def scrape_all_jobs():
     def scrape_striive():
-        # Headless & Cloud Run compatible browser
         options = Options()
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920x1080")
-    
+
         driver = webdriver.Chrome(options=options)
         wait = WebDriverWait(driver, 15)
-    
+
         try:
             driver.get("https://login.striive.com/")
             driver.set_window_size(1920, 1080)
             time.sleep(2)
-    
+
             driver.find_element(By.ID, "email").send_keys(st.secrets["striive"]["username"])
             driver.find_element(By.ID, "password").send_keys(st.secrets["striive"]["password"])
             driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    
-            # ⏳ Wacht en valideer login
+
             try:
                 opdrachten_link = wait.until(EC.element_to_be_clickable((
                     By.XPATH, "//a[contains(@href, '/inbox')]//span[contains(text(), 'Opdrachten')]"
@@ -109,16 +107,16 @@ def scrape_all_jobs():
                 st.error("❌ Inloggen op Striive mislukt. Controleer je inloggegevens.")
                 driver.quit()
                 return pd.DataFrame()
-            
+
             scroll_container = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.p-scroller")))
 
             vacature_links_dict = {}
             repeats = 0
             max_repeats = 5
-        
+
             while repeats < max_repeats:
                 job_elements = driver.find_elements(By.CSS_SELECTOR, "div.job-request-row")
-        
+
                 new_count = 0
                 for div in job_elements:
                     try:
@@ -126,7 +124,7 @@ def scrape_all_jobs():
                         opdrachtgever = div.find_element(By.CSS_SELECTOR, "[data-testid='listClientName']").text.strip()
                         regio = div.find_element(By.CSS_SELECTOR, "[data-testid='listRegionName']").text.strip()
                         link = div.find_element(By.CSS_SELECTOR, "a[data-testid='jobRequestDetailLink']").get_attribute("href")
-        
+
                         if link not in vacature_links_dict:
                             vacature_links_dict[link] = {
                                 "Titel": title,
@@ -137,17 +135,17 @@ def scrape_all_jobs():
                             }
                             new_count += 1
                             st.info(f"➕ Vacature toegevoegd: {title} ({opdrachtgever})")
-                    except Exception as e:
+                    except Exception:
                         continue
-        
+
                 if new_count == 0:
                     repeats += 1
                 else:
                     repeats = 0
-        
+
                 driver.execute_script("arguments[0].scrollBy(0, 1000);", scroll_container)
                 time.sleep(1.2)
-        
+
             results = []
             for vacature in vacature_links_dict.values():
                 try:
@@ -163,10 +161,15 @@ def scrape_all_jobs():
                     results.append(vacature)
                 except:
                     continue
-        
+
             st.success(f"✅ Striive scraping voltooid: {len(results)} vacatures gevonden.")
             driver.quit()
             return pd.DataFrame(results)
+
+        except Exception as e:
+            st.error(f"❌ Fout tijdens scraping Striive: {e}")
+            driver.quit()
+            return pd.DataFrame()
 
     def scrape_flextender():
         chrome_options = Options()
@@ -178,29 +181,24 @@ def scrape_all_jobs():
         driver = webdriver.Chrome(service=service, options=chrome_options)
         wait = WebDriverWait(driver, 10)
 
-        # Inloggen
         driver.get("https://app.flextender.nl/")
         time.sleep(2)
         try:
             driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["flextender"]["username"])
             driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["flextender"]["password"], Keys.ENTER)
-
         except Exception as e:
             st.error("❌ Inloggen mislukt op Flextender. Check credentials of browserconfig.")
             st.stop()
-        
+
         time.sleep(5)
 
-        # Naar aanbevolen vacatures
         driver.get("https://app.flextender.nl/supplier/jobs/recommended")
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-jobsummarywidget")))
         time.sleep(3)
 
-        # Haal totaal aantal pagina's dynamisch
         total_pages = get_total_pages(driver, wait)
         st.write(f"FlexTender vacatures aantal pagina’s: {total_pages}")
 
-        # Ga terug naar pagina 1
         try:
             paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "span.target-jobsearchresults-page-1")))
             paginator.click()
@@ -211,7 +209,6 @@ def scrape_all_jobs():
         data = []
 
         for page_num in range(1, total_pages + 1):
-
             try:
                 paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, f"span.target-jobsearchresults-page-{page_num}")))
                 paginator.click()
@@ -227,8 +224,6 @@ def scrape_all_jobs():
             except Exception as e:
                 st.warning(f"❌ Geen vacatures gevonden op pagina {page_num}: {e}")
                 continue
-
-            #st.write(f"🔎 {len(page_divs)} vacatures gevonden op pagina {page_num}")
 
             for div in page_divs:
                 try:
@@ -255,7 +250,6 @@ def scrape_all_jobs():
                         except:
                             continue
 
-                    # Beschrijving ophalen via nieuwe tab
                     driver.execute_script("window.open('');")
                     driver.switch_to.window(driver.window_handles[1])
                     driver.get(link)
@@ -273,9 +267,12 @@ def scrape_all_jobs():
                 except Exception as e:
                     st.warning(f"⚠️ Fout bij vacature verwerken: {e}")
                     continue
+
         st.write(f"Flextender vacatures gevonden: {len(data)}")
         driver.quit()
         return pd.DataFrame(data)
+
+    # Start scraping
     print("🚀 Start scraping Striive...")
     df_striive = scrape_striive()
     print(f"✅ Striive: {len(df_striive)} vacatures gevonden")
@@ -288,6 +285,7 @@ def scrape_all_jobs():
     print(f"📊 Totaal gecombineerde vacatures: {len(df_combined)}")
 
     return df_combined
+
 
 # --- PDF extractie ---
 def extract_text_from_pdf(pdf_file):
