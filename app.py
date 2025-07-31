@@ -133,6 +133,7 @@ def scrape_all_jobs():
                                 "Bron": "Striive"
                             }
                             new_count += 1
+                            st.info(f"➕ Vacature toegevoegd: {title} ({opdrachtgever})")
                     except:
                         continue
 
