@@ -159,9 +159,15 @@ def scrape_all_jobs():
                     results.append(vacature)
                 except:
                     continue
+
             st.write(f"Striive vacatures gevonden: {len(results)}")
             driver.quit()
             return pd.DataFrame(results)
+
+        except Exception as e:
+            st.error(f"❌ Fout tijdens scraping Striive: {e}")
+            driver.quit()
+            return pd.DataFrame()
 
     def scrape_flextender():
         chrome_options = Options()
@@ -277,6 +283,7 @@ def scrape_all_jobs():
     print(f"📊 Totaal gecombineerde vacatures: {len(df_combined)}")
 
     return df_combined
+
 
 
 # --- PDF extractie ---
