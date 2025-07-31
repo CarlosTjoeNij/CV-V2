@@ -103,9 +103,8 @@ def scrape_all_jobs():
                 )))
                 opdrachten_link.click()
                 st.success("✅ Inloggen op Striive gelukt")
-            except Exception as e:
+            except Exception:
                 st.error("❌ Inloggen op Striive mislukt. Controleer je inloggegevens.")
-                driver.quit()
                 return pd.DataFrame()
 
             scroll_container = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.p-scroller")))
@@ -162,13 +161,15 @@ def scrape_all_jobs():
                     continue
 
             st.write(f"Striive vacatures gevonden: {len(results)}")
-            driver.quit()
             return pd.DataFrame(results)
 
         except Exception as e:
             st.error(f"❌ Fout tijdens scraping Striive: {e}")
-            driver.quit()
             return pd.DataFrame()
+
+        finally:
+            driver.quit()
+
 
     def scrape_flextender():
         chrome_options = Options()
