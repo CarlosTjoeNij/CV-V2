@@ -168,114 +168,114 @@ def scrape_all_jobs():
             driver.quit()
             return pd.DataFrame(results)
 
-        def scrape_flextender():
-            chrome_options = Options()
-            chrome_options.add_argument("--headless=new")
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-    
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-            wait = WebDriverWait(driver, 10)
-    
-            # Inloggen
-            driver.get("https://app.flextender.nl/")
+    def scrape_flextender():
+        chrome_options = Options()
+        chrome_options.add_argument("--headless=new")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        wait = WebDriverWait(driver, 10)
+
+        # Inloggen
+        driver.get("https://app.flextender.nl/")
+        time.sleep(2)
+        try:
+            driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["flextender"]["username"])
+            driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["flextender"]["password"], Keys.ENTER)
+
+        except Exception as e:
+            st.error("❌ Inloggen mislukt op Flextender. Check credentials of browserconfig.")
+            st.stop()
+        
+        time.sleep(5)
+
+        # Naar aanbevolen vacatures
+        driver.get("https://app.flextender.nl/supplier/jobs/recommended")
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-jobsummarywidget")))
+        time.sleep(3)
+
+        # Haal totaal aantal pagina's dynamisch
+        total_pages = get_total_pages(driver, wait)
+        st.write(f"FlexTender vacatures aantal pagina’s: {total_pages}")
+
+        # Ga terug naar pagina 1
+        try:
+            paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "span.target-jobsearchresults-page-1")))
+            paginator.click()
             time.sleep(2)
+        except Exception as e:
+            st.warning(f"⚠️ Kon niet terug naar pagina 1: {e}")
+
+        data = []
+
+        for page_num in range(1, total_pages + 1):
+
             try:
-                driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["flextender"]["username"])
-                driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["flextender"]["password"], Keys.ENTER)
-    
-            except Exception as e:
-                st.error("❌ Inloggen mislukt op Flextender. Check credentials of browserconfig.")
-                st.stop()
-            
-            time.sleep(5)
-    
-            # Naar aanbevolen vacatures
-            driver.get("https://app.flextender.nl/supplier/jobs/recommended")
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-jobsummarywidget")))
-            time.sleep(3)
-    
-            # Haal totaal aantal pagina's dynamisch
-            total_pages = get_total_pages(driver, wait)
-            st.write(f"FlexTender vacatures aantal pagina’s: {total_pages}")
-    
-            # Ga terug naar pagina 1
-            try:
-                paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "span.target-jobsearchresults-page-1")))
+                paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, f"span.target-jobsearchresults-page-{page_num}")))
                 paginator.click()
                 time.sleep(2)
             except Exception as e:
-                st.warning(f"⚠️ Kon niet terug naar pagina 1: {e}")
-    
-            data = []
-    
-            for page_num in range(1, total_pages + 1):
-    
+                st.warning(f"⚠️ Kan pagina {page_num} niet openen: {e}")
+                continue
+
+            try:
+                page_divs = wait.until(EC.presence_of_all_elements_located((
+                    By.CSS_SELECTOR, f"div.css-jobsummarywidget.target-jobsearchresults-page-{page_num}"
+                )))
+            except Exception as e:
+                st.warning(f"❌ Geen vacatures gevonden op pagina {page_num}: {e}")
+                continue
+
+            #st.write(f"🔎 {len(page_divs)} vacatures gevonden op pagina {page_num}")
+
+            for div in page_divs:
                 try:
-                    paginator = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, f"span.target-jobsearchresults-page-{page_num}")))
-                    paginator.click()
-                    time.sleep(2)
-                except Exception as e:
-                    st.warning(f"⚠️ Kan pagina {page_num} niet openen: {e}")
-                    continue
-    
-                try:
-                    page_divs = wait.until(EC.presence_of_all_elements_located((
-                        By.CSS_SELECTOR, f"div.css-jobsummarywidget.target-jobsearchresults-page-{page_num}"
-                    )))
-                except Exception as e:
-                    st.warning(f"❌ Geen vacatures gevonden op pagina {page_num}: {e}")
-                    continue
-    
-                #st.write(f"🔎 {len(page_divs)} vacatures gevonden op pagina {page_num}")
-    
-                for div in page_divs:
-                    try:
-                        card = div.find_element(By.CSS_SELECTOR, ".js-widget-content")
-                        link_elem = card.find_element(By.CSS_SELECTOR, "a.job-summary-clickable")
-                        link = link_elem.get_attribute("href")
-    
-                        titel = card.find_element(By.CSS_SELECTOR, ".flx-jobsummary-title div").text.strip()
-                        opdrachtgever = card.find_element(By.CSS_SELECTOR, ".flx-jobsummary-client").text.strip()
-    
-                        vacature = {
-                            "pagina": page_num,
-                            "Titel": titel,
-                            "Opdrachtgever": opdrachtgever,
-                            "Link": link
-                        }
-    
-                        caption_fields = card.find_elements(By.CSS_SELECTOR, ".caption-field")
-                        for field in caption_fields:
-                            try:
-                                label = field.find_element(By.CSS_SELECTOR, ".caption").text.strip()
-                                value = field.find_element(By.CSS_SELECTOR, ".field").text.strip()
-                                vacature[label] = value
-                            except:
-                                continue
-    
-                        # Beschrijving ophalen via nieuwe tab
-                        driver.execute_script("window.open('');")
-                        driver.switch_to.window(driver.window_handles[1])
-                        driver.get(link)
+                    card = div.find_element(By.CSS_SELECTOR, ".js-widget-content")
+                    link_elem = card.find_element(By.CSS_SELECTOR, "a.job-summary-clickable")
+                    link = link_elem.get_attribute("href")
+
+                    titel = card.find_element(By.CSS_SELECTOR, ".flx-jobsummary-title div").text.strip()
+                    opdrachtgever = card.find_element(By.CSS_SELECTOR, ".flx-jobsummary-client").text.strip()
+
+                    vacature = {
+                        "pagina": page_num,
+                        "Titel": titel,
+                        "Opdrachtgever": opdrachtgever,
+                        "Link": link
+                    }
+
+                    caption_fields = card.find_elements(By.CSS_SELECTOR, ".caption-field")
+                    for field in caption_fields:
                         try:
-                            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-formattedjobdescription")))
-                            desc_html = driver.find_element(By.CSS_SELECTOR, "div.css-formattedjobdescription").get_attribute("innerHTML")
-                            vacature["Beschrijving"] = desc_html
+                            label = field.find_element(By.CSS_SELECTOR, ".caption").text.strip()
+                            value = field.find_element(By.CSS_SELECTOR, ".field").text.strip()
+                            vacature[label] = value
                         except:
-                            vacature["Beschrijving"] = "Geen beschrijving gevonden"
-                        driver.close()
-                        driver.switch_to.window(driver.window_handles[0])
-    
-                        data.append(vacature)
-    
-                    except Exception as e:
-                        st.warning(f"⚠️ Fout bij vacature verwerken: {e}")
-                        continue
-            st.write(f"Flextender vacatures gevonden: {len(data)}")
-            driver.quit()
-            return pd.DataFrame(data)
+                            continue
+
+                    # Beschrijving ophalen via nieuwe tab
+                    driver.execute_script("window.open('');")
+                    driver.switch_to.window(driver.window_handles[1])
+                    driver.get(link)
+                    try:
+                        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-formattedjobdescription")))
+                        desc_html = driver.find_element(By.CSS_SELECTOR, "div.css-formattedjobdescription").get_attribute("innerHTML")
+                        vacature["Beschrijving"] = desc_html
+                    except:
+                        vacature["Beschrijving"] = "Geen beschrijving gevonden"
+                    driver.close()
+                    driver.switch_to.window(driver.window_handles[0])
+
+                    data.append(vacature)
+
+                except Exception as e:
+                    st.warning(f"⚠️ Fout bij vacature verwerken: {e}")
+                    continue
+        st.write(f"Flextender vacatures gevonden: {len(data)}")
+        driver.quit()
+        return pd.DataFrame(data)
     print("🚀 Start scraping Striive...")
     df_striive = scrape_striive()
     print(f"✅ Striive: {len(df_striive)} vacatures gevonden")
