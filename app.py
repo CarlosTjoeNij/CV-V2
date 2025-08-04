@@ -23,7 +23,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 import streamlit as st
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import spacy
 
@@ -117,6 +116,7 @@ def scrape_all_jobs():
 
             while repeats < max_repeats:
                 job_elements = driver.find_elements(By.CSS_SELECTOR, "div.job-request-row")
+
                 new_count = 0
                 for div in job_elements:
                     try:
@@ -135,40 +135,38 @@ def scrape_all_jobs():
                             new_count += 1
                     except:
                         continue
+
                 if new_count == 0:
                     repeats += 1
                 else:
                     repeats = 0
+
                 driver.execute_script("arguments[0].scrollBy(0, 1000);", scroll_container)
                 time.sleep(1.2)
 
-            driver.quit()  # Belangrijk: sluit hoofd-driver hier
-
-            # === Beschrijvingen ophalen in parallel ===
-            def fetch_description(vacature):
-                local_driver = webdriver.Chrome(options=options)
-                try:
-                    local_driver.get(vacature["Link"])
-                    desc_elem = WebDriverWait(local_driver, 5).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='jobRequestDescription']"))
-                    )
-                    html = desc_elem.get_attribute("innerHTML").strip()
-                    text = BeautifulSoup(html, "html.parser").get_text(separator="\n").strip()
-                    vacature["Beschrijving"] = text
-                except:
-                    vacature["Beschrijving"] = ""
-                finally:
-                    local_driver.quit()
-                return vacature
-
             results = []
-            with ThreadPoolExecutor(max_workers=6) as executor:
-                futures = [executor.submit(fetch_description, v) for v in vacature_links_dict.values()]
-                for future in as_completed(futures):
+            for link, vacature in vacature_links_dict.items():
+                try:
+                    driver.get(link)
+
+                    # Beschrijving ophalen met timeout
                     try:
-                        results.append(future.result())
-                    except Exception as e:
-                        st.warning(f"⚠️ Beschrijving ophalen mislukt: {e}")
+                        desc_elem = WebDriverWait(driver, 5).until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='jobRequestDescription']"))
+                        )
+                        beschrijving_html = desc_elem.get_attribute("innerHTML").strip()
+                        soup = BeautifulSoup(beschrijving_html, "html.parser")
+                        beschrijving_tekst = soup.get_text(separator="\n").strip()
+                        vacature["Beschrijving"] = beschrijving_tekst
+
+                    except Exception as inner_e:
+                        vacature["Beschrijving"] = ""
+
+                    results.append(vacature)
+
+                except Exception as outer_e:
+                    st.warning(f"⚠️ Fout bij laden detailpagina: {link} - {outer_e}")
+                    continue
 
             st.write(f"Striive - aantal vacatures gevonden: {len(results)}")
             return pd.DataFrame(results)
@@ -176,6 +174,9 @@ def scrape_all_jobs():
         except Exception as e:
             st.error(f"❌ Fout tijdens scraping Striive: {e}")
             return pd.DataFrame()
+
+        finally:
+            driver.quit()
 
 
     def scrape_flextender():
@@ -284,7 +285,6 @@ def scrape_all_jobs():
     df_striive = scrape_striive()
     df_flex = scrape_flextender()
     df_combined = pd.concat([df_striive, df_flex], ignore_index=True)
-
     duration = time.time() - start_time
     st.write(f"Scraping voltooid in {duration / 60:.1f} minuten")
 
