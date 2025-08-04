@@ -23,6 +23,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 import streamlit as st
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+from concurrent.futures import ThreadPoolExecutor
 
 import spacy
 
@@ -451,4 +452,5 @@ if uploaded_file:
             st.write(f"- {word} (score: {score:.3f})")
 else:
     st.info("Upload eerst een CV om de matching te starten.")
+
 
