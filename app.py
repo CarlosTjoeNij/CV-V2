@@ -145,12 +145,11 @@ def scrape_all_jobs():
                 time.sleep(1.2)
 
             results = []
-            for vacature in vacature_links_dict.values():
+            for link, vacature in vacature_links_dict.items():
                 try:
-                    driver.get(vacature["Link"])
+                    driver.get(link)
                     try:
-                        # TIMEOUT!
-                        desc_elem = WebDriverWait(driver, 10).until(
+                        desc_elem = WebDriverWait(driver, 5).until(
                             EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='jobRequestDescription']"))
                         )
                         beschrijving_html = desc_elem.get_attribute("innerHTML").strip()
@@ -158,11 +157,13 @@ def scrape_all_jobs():
                         beschrijving_tekst = soup.get_text(separator="\n").strip()
                         vacature["Beschrijving"] = beschrijving_tekst
                     except Exception as inner_e:
-                        st.warning(f"⚠️ Beschrijving niet gevonden voor: {vacature['Titel']} ({vacature['Opdrachtgever']}) - {inner_e}")
+                        st.warning(f"⚠️ Beschrijving niet gevonden voor: {vacature['Titel']} - {inner_e}")
                         vacature["Beschrijving"] = ""
+
                     results.append(vacature)
+
                 except Exception as outer_e:
-                    st.warning(f"⚠️ Fout bij openen vacaturepagina: {vacature['Link']} - {outer_e}")
+                    st.warning(f"⚠️ Fout bij laden detailpagina: {link} - {outer_e}")
                     continue
 
             st.write(f"Striive vacatures gevonden: {len(results)}")
@@ -447,3 +448,4 @@ if uploaded_file:
             st.write(f"- {word} (score: {score:.3f})")
 else:
     st.info("Upload eerst een CV om de matching te starten.")
+
