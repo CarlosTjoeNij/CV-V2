@@ -23,7 +23,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 import streamlit as st
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import spacy
 
@@ -116,7 +116,6 @@ def scrape_all_jobs():
 
             while repeats < max_repeats:
                 job_elements = driver.find_elements(By.CSS_SELECTOR, "div.job-request-row")
-
                 new_count = 0
                 for div in job_elements:
                     try:
@@ -135,47 +134,40 @@ def scrape_all_jobs():
                             new_count += 1
                     except:
                         continue
-
                 if new_count == 0:
                     repeats += 1
                 else:
                     repeats = 0
-
                 driver.execute_script("arguments[0].scrollBy(0, 1000);", scroll_container)
                 time.sleep(1.2)
 
-            results = []
-            def fetch_description(vacature):
-                try:
-                    options = Options()
-                    options.add_argument("--headless")
-                    options.add_argument("--no-sandbox")
-                    options.add_argument("--disable-dev-shm-usage")
-                    options.add_argument("--disable-gpu")
-                    options.add_argument("--window-size=1920x1080")
-                    sub_driver = webdriver.Chrome(options=options)
+            driver.quit()  # Belangrijk: sluit hoofd-driver hier
 
-                    sub_driver.get(vacature["Link"])
-                    desc_elem = WebDriverWait(sub_driver, 5).until(
+            # === Beschrijvingen ophalen in parallel ===
+            def fetch_description(vacature):
+                local_driver = webdriver.Chrome(options=options)
+                try:
+                    local_driver.get(vacature["Link"])
+                    desc_elem = WebDriverWait(local_driver, 5).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='jobRequestDescription']"))
                     )
                     html = desc_elem.get_attribute("innerHTML").strip()
                     text = BeautifulSoup(html, "html.parser").get_text(separator="\n").strip()
                     vacature["Beschrijving"] = text
-
-                    sub_driver.quit()
-                    return vacature
                 except:
                     vacature["Beschrijving"] = ""
-                    try:
-                        sub_driver.quit()
-                    except:
-                        pass
-                    return vacature
+                finally:
+                    local_driver.quit()
+                return vacature
 
-            # Parallel ophalen van beschrijvingen
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                results = list(executor.map(fetch_description, list(vacature_links_dict.values())))
+            results = []
+            with ThreadPoolExecutor(max_workers=6) as executor:
+                futures = [executor.submit(fetch_description, v) for v in vacature_links_dict.values()]
+                for future in as_completed(futures):
+                    try:
+                        results.append(future.result())
+                    except Exception as e:
+                        st.warning(f"⚠️ Beschrijving ophalen mislukt: {e}")
 
             st.write(f"Striive - aantal vacatures gevonden: {len(results)}")
             return pd.DataFrame(results)
@@ -183,9 +175,6 @@ def scrape_all_jobs():
         except Exception as e:
             st.error(f"❌ Fout tijdens scraping Striive: {e}")
             return pd.DataFrame()
-
-        finally:
-            driver.quit()
 
 
     def scrape_flextender():
@@ -424,7 +413,7 @@ def cached_scrape():
     return scrape_all_jobs()
 
 if uploaded_file:
-    with st.spinner("Vacatures scrapen en verwerken, dit kan +-20 min duren..."):
+    with st.spinner("Vacatures scrapen en verwerken, dit kan een tijdje duren..."):
         df = cached_scrape()
         
     st.success(f"✅ In totaal {len(df)} vacatures verzameld. De beste matches zullen hieronder worden weergegeven.")
@@ -452,5 +441,4 @@ if uploaded_file:
             st.write(f"- {word} (score: {score:.3f})")
 else:
     st.info("Upload eerst een CV om de matching te starten.")
-
 
