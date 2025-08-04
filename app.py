@@ -148,6 +148,8 @@ def scrape_all_jobs():
             for link, vacature in vacature_links_dict.items():
                 try:
                     driver.get(link)
+
+                    # Beschrijving ophalen met timeout
                     try:
                         desc_elem = WebDriverWait(driver, 5).until(
                             EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='jobRequestDescription']"))
@@ -156,6 +158,9 @@ def scrape_all_jobs():
                         soup = BeautifulSoup(beschrijving_html, "html.parser")
                         beschrijving_tekst = soup.get_text(separator="\n").strip()
                         vacature["Beschrijving"] = beschrijving_tekst
+
+                        st.info(f"📄 Beschrijving toegevoegd: {vacature['Titel']} ({vacature['Opdrachtgever']})")
+
                     except Exception as inner_e:
                         st.warning(f"⚠️ Beschrijving niet gevonden voor: {vacature['Titel']} - {inner_e}")
                         vacature["Beschrijving"] = ""
@@ -166,6 +171,8 @@ def scrape_all_jobs():
                     st.warning(f"⚠️ Fout bij laden detailpagina: {link} - {outer_e}")
                     continue
 
+
+            st.write("Detail scraping klaar")
             st.write(f"Striive vacatures gevonden: {len(results)}")
             return pd.DataFrame(results)
 
