@@ -132,7 +132,6 @@ def scrape_all_jobs():
                                 "Bron": "Striive"
                             }
                             new_count += 1
-                            st.info(f"➕ Vacature toegevoegd: {title} ({opdrachtgever})")
                     except:
                         continue
 
@@ -159,10 +158,7 @@ def scrape_all_jobs():
                         beschrijving_tekst = soup.get_text(separator="\n").strip()
                         vacature["Beschrijving"] = beschrijving_tekst
 
-                        st.info(f"📄 Beschrijving toegevoegd: {vacature['Titel']} ({vacature['Opdrachtgever']})")
-
                     except Exception as inner_e:
-                        st.warning(f"⚠️ Beschrijving niet gevonden voor: {vacature['Titel']} - {inner_e}")
                         vacature["Beschrijving"] = ""
 
                     results.append(vacature)
@@ -171,9 +167,7 @@ def scrape_all_jobs():
                     st.warning(f"⚠️ Fout bij laden detailpagina: {link} - {outer_e}")
                     continue
 
-
-            st.write("Detail scraping klaar")
-            st.write(f"Striive vacatures gevonden: {len(results)}")
+            st.write(f"Striive - aantal vacatures gevonden: {len(results)}")
             return pd.DataFrame(results)
 
         except Exception as e:
@@ -199,6 +193,7 @@ def scrape_all_jobs():
         try:
             driver.find_element(By.NAME, "login[username]").send_keys(st.secrets["flextender"]["username"])
             driver.find_element(By.NAME, "login[password]").send_keys(st.secrets["flextender"]["password"], Keys.ENTER)
+            st.success("✅ Inloggen op Flextender gelukt")
         except Exception as e:
             st.error("❌ Inloggen mislukt op Flextender. Check credentials of browserconfig.")
             st.stop()
@@ -281,25 +276,16 @@ def scrape_all_jobs():
                     st.warning(f"⚠️ Fout bij vacature verwerken: {e}")
                     continue
 
-        st.write(f"Flextender vacatures gevonden: {len(data)}")
+        st.write(f"Flextender - aantal vacatures gevonden: {len(data)}")
         driver.quit()
         return pd.DataFrame(data)
 
     # Start scraping
-    print("🚀 Start scraping Striive...")
     df_striive = scrape_striive()
-    print(f"✅ Striive: {len(df_striive)} vacatures gevonden")
-
-    print("🚀 Start scraping Flextender...")
     df_flex = scrape_flextender()
-    print(f"✅ Flextender: {len(df_flex)} vacatures gevonden")
-
     df_combined = pd.concat([df_striive, df_flex], ignore_index=True)
-    print(f"📊 Totaal gecombineerde vacatures: {len(df_combined)}")
 
     return df_combined
-
-
 
 # --- PDF extractie ---
 def extract_text_from_pdf(pdf_file):
@@ -428,8 +414,25 @@ def cached_scrape():
     return scrape_all_jobs()
 
 if uploaded_file:
-    with st.spinner("Vacatures scrapen en verwerken, dit kan een paar minuten duren..."):
-        df = cached_scrape()
+    progress_bar = st.progress(0, text="Vacatures scrapen en verwerken... dit kan een paar minuten duren.")
+    status_text = st.empty()
+
+    # Simuleer voortgang tijdens cache call
+    for i in range(100):
+        time.sleep(0.05)  # totaal ~5 seconden
+        progress_bar.progress(i + 1)
+        if i == 20:
+            status_text.text("🔍 Bezig met verzamelen van vacatures...")
+        elif i == 50:
+            status_text.text("📄 Bezig met verwerken van beschrijvingen...")
+        elif i == 80:
+            status_text.text("🧠 Bezig met voorbereiden op matching...")
+
+    # Voer scrape uit terwijl de progressbar loopt
+    df = cached_scrape()
+
+    progress_bar.empty()
+    status_text.empty()
     st.success(f"✅ In totaal {len(df)} vacatures verzameld. De beste matches zullen hieronder worden weergegeven.")
 
     cv_text = extract_text_from_pdf(uploaded_file)
