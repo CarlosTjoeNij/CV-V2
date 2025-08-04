@@ -414,25 +414,9 @@ def cached_scrape():
     return scrape_all_jobs()
 
 if uploaded_file:
-    progress_bar = st.progress(0, text="Vacatures scrapen en verwerken... dit kan een paar minuten duren.")
-    status_text = st.empty()
-
-    # Simuleer voortgang tijdens cache call
-    for i in range(100):
-        time.sleep(0.05)  # totaal ~5 seconden
-        progress_bar.progress(i + 1)
-        if i == 20:
-            status_text.text("🔍 Bezig met verzamelen van vacatures...")
-        elif i == 50:
-            status_text.text("📄 Bezig met verwerken van beschrijvingen...")
-        elif i == 80:
-            status_text.text("🧠 Bezig met voorbereiden op matching...")
-
-    # Voer scrape uit terwijl de progressbar loopt
-    df = cached_scrape()
-
-    progress_bar.empty()
-    status_text.empty()
+    with st.spinner("Vacatures scrapen en verwerken, dit kan een +-20 min duren..."):
+        df = cached_scrape()
+        
     st.success(f"✅ In totaal {len(df)} vacatures verzameld. De beste matches zullen hieronder worden weergegeven.")
 
     cv_text = extract_text_from_pdf(uploaded_file)
