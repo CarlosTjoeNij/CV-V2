@@ -78,6 +78,7 @@ def get_total_pages(driver, wait):
     return max_page
 
 def scrape_all_jobs():
+    start_time = time.time()
     def scrape_striive():
         options = Options()
         options.add_argument("--headless")
@@ -283,6 +284,9 @@ def scrape_all_jobs():
     df_striive = scrape_striive()
     df_flex = scrape_flextender()
     df_combined = pd.concat([df_striive, df_flex], ignore_index=True)
+
+    duration = time.time() - start_time
+    st.write(f"Scraping voltooid in {duration / 60:.1f} minuten")
 
     return df_combined
 
