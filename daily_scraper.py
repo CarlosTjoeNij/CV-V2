@@ -1,21 +1,38 @@
 # daily_scraper.py
+import io
 import datetime
 import pandas as pd
-import io
 from google.cloud import storage
-from scraper_core import scrape_all_jobs
+from scraper_core import scrape_all_jobs  # <- jouw bestaande functie
 
-def upload_df_to_gcs(df: pd.DataFrame, bucket_name: str, blob_name: str):
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(blob_name)
-    blob.upload_from_string(df.to_parquet(index=False), 'application/octet-stream')
-    print(f"✅ Upload compleet: gs://{bucket_name}/{blob_name}")
+BUCKET_NAME = "scrapes_cvmatcher"
 
-if __name__ == "__main__":
-    print("🚀 Start daily scrape...")
-    df = scrape_all_jobs()
+def upload_to_gcs(df: pd.DataFrame):
+    """Upload DataFrame naar GCS als Parquet-bestand."""
     today_str = datetime.date.today().isoformat()
     filename = f"jobs_{today_str}.parquet"
-    upload_df_to_gcs(df, "scrapes_cvmatcher", filename)
-    print("🏁 Scraping klaar.")
+
+    client = storage.Client()
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(filename)
+
+    buffer = io.BytesIO()
+    df.to_parquet(buffer, index=False)
+    buffer.seek(0)
+
+    blob.upload_from_file(buffer, content_type="application/octet-stream")
+    print(f"✅ Uploaded {len(df)} rows to gs://{BUCKET_NAME}/{filename}")
+
+def main():
+    print("🚀 Start scraping job...")
+    df = scrape_all_jobs()  # Komt uit scraper_core
+
+    if df.empty:
+        print("⚠️ Geen vacatures gevonden. Upload wordt overgeslagen.")
+        return
+
+    upload_to_gcs(df)
+    print("🎉 Daily scrape completed!")
+
+if __name__ == "__main__":
+    main()
