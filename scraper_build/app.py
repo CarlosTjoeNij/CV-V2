@@ -1,16 +1,16 @@
+# scraper_build/app.py
 from flask import Flask
 import threading
-import scraper_core  # je bestaande scraper
+import daily_scraper  # gebruik de main van daily_scraper
 
 app = Flask(__name__)
 
 # Start scraper in background thread
 def run_scraper():
-    scraper_core.main()  # zorg dat scraper_core een main() functie heeft
+    daily_scraper.main()  # ← hier de main van daily_scraper
 
 threading.Thread(target=run_scraper).start()
 
-# Healthcheck endpoint
 @app.route("/")
 def index():
     return "Scraper running", 200
