@@ -13,10 +13,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # Deze kun je in .env of secrets zetten
 import os
-STRIIVE_USER = os.environ.get("STRIIVE_USER")
-STRIIVE_PASS = os.environ.get("STRIIVE_PASS")
-FLEX_USER = os.environ.get("FLEX_USER")
-FLEX_PASS = os.environ.get("FLEX_PASS")
+import streamlit as st
+
+# Haal credentials op uit .streamlit/secrets.toml
+STRIIVE_USER = st.secrets["striive"]["username"]
+STRIIVE_PASS = st.secrets["striive"]["password"]
+FLEX_USER = st.secrets["flextender"]["username"]
+FLEX_PASS = st.secrets["flextender"]["password"]
 
 def get_total_pages(driver, wait):
     max_page = 1
