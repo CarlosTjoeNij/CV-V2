@@ -2,10 +2,13 @@ FROM python:3.10-slim
 
 # Install dependencies voor headless browser
 RUN apt-get update && apt-get install -y \
-    wget unzip curl xvfb gnupg \
+    curl unzip wget gnupg xvfb \
     libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 \
-    libnss3 libxrandr2 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
-    libdrm2 libdbus-1-3 libgbm1 libgtk-3-0 libxshmfence1 fonts-liberation xdg-utils
+    libxrandr2 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+    libdrm2 libdbus-1-3 libgbm1 libgtk-3-0 libxshmfence1 \
+    fonts-liberation xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+    
 
 # Install Chrome voor testing (versie 138+) inclusief driver
 RUN CHROME_VERSION=138.0.7258.127 && \
