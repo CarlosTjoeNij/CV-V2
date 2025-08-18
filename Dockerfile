@@ -1,16 +1,15 @@
-# Base image
+# Gebruik Python 3.10 slim als basis
 FROM python:3.10-slim
 
-# Install dependencies voor headless browser
+# Basis dependencies voor headless Chrome
 RUN apt-get update && apt-get install -y \
     curl unzip wget gnupg xvfb \
     libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 \
     libxrandr2 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
     libdrm2 libdbus-1-3 libgbm1 libgtk-3-0 libxshmfence1 \
-    fonts-liberation xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Chrome (headless) + ChromeDriver
+# Chrome for Testing + ChromeDriver (headless)
 RUN CHROME_VERSION=138.0.7258.127 && \
     wget -O /tmp/chrome-for-testing.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chrome-linux64.zip && \
     unzip /tmp/chrome-for-testing.zip -d /opt/ && \
@@ -26,11 +25,11 @@ RUN CHROME_VERSION=138.0.7258.127 && \
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# App code
+# Kopieer app code
 COPY . /app
 WORKDIR /app
 
-# Env
+# Environment variable voor GCS bucket (optioneel)
 ENV BUCKET_NAME=scrapes_cvmatcher
 
 # Run scraper
