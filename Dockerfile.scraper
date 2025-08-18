@@ -1,27 +1,37 @@
+# Basis image met Python
 FROM python:3.12-slim
 
-ENV CHROME_VERSION=116.0.5845.96
-ENV PATH="/opt/chrome:${PATH}"
-
+# Installeren van benodigde tools
 RUN apt-get update && apt-get install -y \
-    wget unzip curl gnupg fonts-liberation libnss3 libxss1 libasound2 \
-    libatk-bridge2.0-0 libgtk-3-0 libdrm2 libx11-xcb1 \
-    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+    curl \
+    unzip \
+    wget \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
 
-# Chrome-for-Testing en Chromedriver
-RUN wget -O /tmp/chrome.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chrome-linux64.zip && \
+# Chrome + Chromedriver automatisch installeren
+RUN LATEST=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/latest-linux.json | jq -r '.version') && \
+    echo "Installing Chrome-for-Testing version $LATEST" && \
+    wget -O /tmp/chrome.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$LATEST/linux64/chrome-linux64.zip && \
     unzip /tmp/chrome.zip -d /opt/ && \
     mv /opt/chrome-linux64 /opt/chrome && \
     rm /tmp/chrome.zip && \
-    wget -O /tmp/chromedriver.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chromedriver-linux64.zip && \
+    wget -O /tmp/chromedriver.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$LATEST/linux64/chromedriver-linux64.zip && \
     unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
     mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \
     chmod +x /usr/local/bin/chromedriver && \
     rm -rf /tmp/chromedriver.zip /usr/local/bin/chromedriver-linux64
 
-WORKDIR /app
+# Voeg Chrome toe aan PATH
+ENV PATH="/opt/chrome:${PATH}"
+
+# Installeer Python dependencies (pas aan naar jouw requirements)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
 
+# Voeg je scraper script toe
+COPY daily_scraper.py /app/daily_scraper.py
+WORKDIR /app
+
+# Start de scraper
 CMD ["python", "daily_scraper.py"]
