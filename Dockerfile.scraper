@@ -1,28 +1,14 @@
-# Basis image
 FROM python:3.12-slim
 
-# Omgevingsvariabelen
 ENV CHROME_VERSION=116.0.5845.96
 ENV PATH="/opt/chrome:${PATH}"
 
-# Systeem afhankelijkheden installeren
 RUN apt-get update && apt-get install -y \
-    wget \
-    unzip \
-    curl \
-    gnupg \
-    fonts-liberation \
-    libnss3 \
-    libxss1 \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libgtk-3-0 \
-    libdrm2 \
-    libx11-xcb1 \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+    wget unzip curl gnupg fonts-liberation libnss3 libxss1 libasound2 \
+    libatk-bridge2.0-0 libgtk-3-0 libdrm2 libx11-xcb1 \
+    --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-# Chrome-for-Testing en Chromedriver installeren
+# Chrome-for-Testing en Chromedriver
 RUN wget -O /tmp/chrome.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chrome-linux64.zip && \
     unzip /tmp/chrome.zip -d /opt/ && \
     mv /opt/chrome-linux64 /opt/chrome && \
@@ -33,15 +19,9 @@ RUN wget -O /tmp/chrome.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-
     chmod +x /usr/local/bin/chromedriver && \
     rm -rf /tmp/chromedriver.zip /usr/local/bin/chromedriver-linux64
 
-# Werkdirectory
 WORKDIR /app
-
-# Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Code toevoegen
 COPY . .
 
-# Standaard commando om je scraper te starten
 CMD ["python", "daily_scraper.py"]
