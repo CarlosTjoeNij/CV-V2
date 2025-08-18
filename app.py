@@ -77,7 +77,8 @@ if uploaded_file:
             st.write("Belangrijkste overeenkomende woorden die bijdragen aan de score:")
             for word, score in keywords:
                 st.write(f"- {word} (score: {score:.3f})")
-    else:
-        st.info("Upload eerst een CV om de matching te starten.")
+        else:
+            st.info("Upload eerst een CV om de matching te starten.")
+
 
 
