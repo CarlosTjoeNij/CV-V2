@@ -1,37 +1,17 @@
-# Basis image met Python
-FROM python:3.12-slim
+# Basis image
+FROM python:3.11-slim
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    curl unzip xvfb wget gnupg \
-    libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 \
-    libnss3 libxrandr2 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
-    libdrm2 libdbus-1-3 libgbm1 libgtk-3-0 libxshmfence1
+WORKDIR /app
 
-# Install Chromium v138
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt install -y ./google-chrome-stable_current_amd64.deb && \
-    rm google-chrome-stable_current_amd64.deb
+# Systeemafhankelijkheden (optioneel, voor pandas/parquet)
+RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
 
-# Install matching ChromeDriver v138
-RUN CHROMEDRIVER_VERSION=138.0.7204.92 && \
-    wget -O /tmp/chromedriver_linux64.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip && \
-    unzip /tmp/chromedriver_linux64.zip -d /usr/local/bin/ && \
-    mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \
-    chmod +x /usr/local/bin/chromedriver && \
-    rm -rf /tmp/chromedriver_linux64.zip /usr/local/bin/chromedriver-linux64
-
-# Voeg Chrome toe aan PATH
-ENV PATH="/opt/chrome:${PATH}"
-
-# Installeer Python dependencies (pas aan naar jouw requirements)
+# Installeer Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Voeg je scraper script toe
-COPY daily_scraper.py /app/daily_scraper.py
-COPY scraper_core.py /app/scraper_core.py
-WORKDIR /app
+# Copy code
+COPY . .
 
-# Start de scraper
+# Standaard commando voor Cloud Run Job
 CMD ["python", "daily_scraper.py"]
