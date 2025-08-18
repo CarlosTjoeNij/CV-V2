@@ -30,6 +30,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Voeg je scraper script toe
 COPY daily_scraper.py /app/daily_scraper.py
+COPY scraper_core.py /app/scraper_core.py
 WORKDIR /app
 
 # Start de scraper
