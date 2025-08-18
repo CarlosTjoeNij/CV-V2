@@ -36,6 +36,13 @@ if df is None:
 
 st.success(f"Data geladen uit `{filename}` - {len(df)} vacatures gevonden.")
 
+# --- PDF extractie ---
+def extract_text_from_pdf(pdf_file):
+    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return text
 
 
 # --- Streamlit UI ---
@@ -79,6 +86,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
