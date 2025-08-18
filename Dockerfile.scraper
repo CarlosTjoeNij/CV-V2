@@ -1,16 +1,17 @@
 # Dockerfile.scraper
 FROM python:3.10-slim
 
-# Basis dependencies voor Chrome + Selenium
+# Basis dependencies voor headless Chrome
 RUN apt-get update && apt-get install -y \
-    curl unzip wget gnupg jq xvfb \
+    curl unzip wget gnupg xvfb \
     libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 \
     libxrandr2 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
     libdrm2 libdbus-1-3 libgbm1 libgtk-3-0 libxshmfence1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install latest Chrome-for-Testing + matching ChromeDriver
-RUN LATEST=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/latest-linux.json | jq -r '.version') && \
+RUN LATEST=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/latest-linux.json | \
+             grep -Po '"version":.*?[^\\]",' | head -1 | cut -d'"' -f4) && \
     echo "Installing Chrome-for-Testing version $LATEST" && \
     wget -O /tmp/chrome.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$LATEST/linux64/chrome-linux64.zip && \
     unzip /tmp/chrome.zip -d /opt/ && \
@@ -26,7 +27,7 @@ RUN LATEST=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/late
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Credentials worden door Cloud Run automatisch geregeld (geen JSON key nodig!)
+# Environment variable voor GCS bucket
 ENV BUCKET_NAME=scrapes_cvmatcher
 
 # Copy app code
