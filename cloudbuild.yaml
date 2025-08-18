@@ -1,0 +1,22 @@
+steps:
+  # Scraper image bouwen
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/potent-terminal-465211-d3/scraper-image',
+      '-f', 'Dockerfile.scraper',
+      '.'
+    ]
+
+  # Streamlit app image bouwen
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/potent-terminal-465211-d3/streamlit-image',
+      '-f', 'Dockerfile',
+      '.'
+    ]
+
+images:
+  - 'gcr.io/potent-terminal-465211-d3/scraper-image'
+  - 'gcr.io/potent-terminal-465211-d3/streamlit-image'
