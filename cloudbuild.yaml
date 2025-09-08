@@ -1,9 +1,9 @@
 steps:
-  # Scraper image bouwen
+  # Scraper job image bouwen
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-t', 'gcr.io/potent-terminal-465211-d3/scraper-image',
+      '-t', 'gcr.io/potent-terminal-465211-d3/scraper-job',
       '-f', 'Dockerfile.scraper',
       '.'
     ]
@@ -18,5 +18,5 @@ steps:
     ]
 
 images:
-  - 'gcr.io/potent-terminal-465211-d3/scraper-image'
+  - 'gcr.io/potent-terminal-465211-d3/scraper-job'
   - 'gcr.io/potent-terminal-465211-d3/streamlit-image'
