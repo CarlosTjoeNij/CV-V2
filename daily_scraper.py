@@ -3,7 +3,7 @@ import io
 import datetime
 import pandas as pd
 from google.cloud import storage
-from scraper_core import scrape_all_jobs  # <- jouw bestaande functie
+from scraper_core import scrape_all_jobs  # jouw bestaande functie
 
 BUCKET_NAME = "scrapes_cvmatcher"
 
@@ -35,4 +35,4 @@ def main():
     print("🎉 Daily scrape completed!")
 
 if __name__ == "__main__":
-    main()
+    main()  # lokaal draaien nog steeds mogelijk
