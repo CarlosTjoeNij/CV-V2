@@ -18,9 +18,10 @@ RUN wget -q -O /tmp/google-chrome.deb https://dl.google.com/linux/direct/google-
     && apt install -y /tmp/google-chrome.deb \
     && rm /tmp/google-chrome.deb
 
-# Installeer ChromeDriver
-RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') && \
-    wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROME_VERSION}/chromedriver_linux64.zip" && \
+# Installeer ChromeDriver (match exact versie)
+RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+') && \
+    DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%.*}") && \
+    wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" && \
     unzip /tmp/chromedriver.zip -d /usr/bin/ && \
     rm /tmp/chromedriver.zip && \
     chmod +x /usr/bin/chromedriver
