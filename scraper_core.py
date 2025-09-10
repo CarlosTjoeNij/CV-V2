@@ -11,21 +11,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import streamlit as st  # Voor secrets
 
-def get_chrome_driver(timeout=15):
-    chrome_options = Options()
-    chrome_options.binary_location = "/usr/bin/google-chrome"
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920x1080")
-
-    service = Service("/usr/bin/chromedriver")
-    print("✅ Start ChromeDriver vanaf:", service.path)
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.implicitly_wait(timeout)
-    return driver
-
 # Haal credentials op uit .streamlit/secrets.toml
 STRIIVE_USER = st.secrets["striive"]["username"]
 STRIIVE_PASS = st.secrets["striive"]["password"]
@@ -42,8 +27,9 @@ def get_chrome_driver(timeout=15):
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920x1080")
-    
+
     service = Service("/usr/bin/chromedriver")
+    print("✅ Start ChromeDriver vanaf:", service.path)
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.implicitly_wait(timeout)
     return driver
