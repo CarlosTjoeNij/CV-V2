@@ -68,80 +68,104 @@ def get_total_pages(driver, wait):
 
 # --- SCRAPE STRIIVE ---
 def scrape_striive():
-    driver = get_chrome_driver()
-    wait = WebDriverWait(driver, 15)
-    try:
-        driver.get("https://login.striive.com/")
-        time.sleep(2)
-        driver.find_element(By.ID, "email").send_keys(STRIIVE_USER)
-        driver.find_element(By.ID, "password").send_keys(STRIIVE_PASS)
-        driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+  options = Options()
+  options.add_argument("--headless")
+  options.add_argument("--no-sandbox")
+  options.add_argument("--disable-dev-shm-usage")
+  options.add_argument("--disable-gpu")
+  options.add_argument("--window-size=1920x1080")
 
-        opdrachten_link = wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, "//a[contains(@href, '/inbox')]//span[contains(text(), 'Opdrachten')]")
-            )
-        )
-        opdrachten_link.click()
-        print("✅ Inloggen op Striive gelukt")
+  driver = webdriver.Chrome(options=options)
+  wait = WebDriverWait(driver, 15)
 
-        scroll_container = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.p-scroller")))
-        vacature_links_dict = {}
-        repeats = 0
-        max_repeats = 5
+  try:
+      driver.get("https://login.striive.com/")
+      driver.set_window_size(1920, 1080)
+      time.sleep(2)
 
-        while repeats < max_repeats:
-            job_elements = driver.find_elements(By.CSS_SELECTOR, "div.job-request-row")
-            new_count = 0
-            for div in job_elements:
-                try:
-                    title = div.find_element(By.CSS_SELECTOR, "[data-testid='listJobRequestTitle']").text.strip()
-                    opdrachtgever = div.find_element(By.CSS_SELECTOR, "[data-testid='listClientName']").text.strip()
-                    regio = div.find_element(By.CSS_SELECTOR, "[data-testid='listRegionName']").text.strip()
-                    link = div.find_element(By.CSS_SELECTOR, "a[data-testid='jobRequestDetailLink']").get_attribute("href")
-                    if link not in vacature_links_dict:
-                        vacature_links_dict[link] = {
-                            "Titel": title,
-                            "Opdrachtgever": opdrachtgever,
-                            "Regio": regio,
-                            "Link": link,
-                            "Bron": "Striive"
-                        }
-                        new_count += 1
-                except:
-                    continue
+      driver.find_element(By.ID, "email").send_keys(st.secrets["striive"]["username"])
+      driver.find_element(By.ID, "password").send_keys(st.secrets["striive"]["password"])
+      driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
 
-            repeats = repeats + 1 if new_count == 0 else 0
-            driver.execute_script("arguments[0].scrollBy(0, 1000);", scroll_container)
-            time.sleep(1.2)
+      try:
+          opdrachten_link = wait.until(EC.element_to_be_clickable((
+              By.XPATH, "//a[contains(@href, '/inbox')]//span[contains(text(), 'Opdrachten')]"
+          )))
+          opdrachten_link.click()
+          st.success("✅ Inloggen op Striive gelukt")
+      except Exception:
+          st.error("❌ Inloggen op Striive mislukt. Controleer je inloggegevens.")
+          return pd.DataFrame()
 
-        results = []
-        for link, vacature in vacature_links_dict.items():
-            try:
-                driver.get(link)
-                try:
-                    desc_elem = WebDriverWait(driver, 5).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='jobRequestDescription']"))
-                    )
-                    beschrijving_html = desc_elem.get_attribute("innerHTML").strip()
-                    soup = BeautifulSoup(beschrijving_html, "html.parser")
-                    beschrijving_tekst = soup.get_text(separator="\n").strip()
-                    vacature["Beschrijving"] = beschrijving_tekst
-                except:
-                    vacature["Beschrijving"] = ""
-                results.append(vacature)
-            except Exception as e:
-                print(f"⚠️ Fout bij laden detailpagina: {link} - {e}")
-                continue
+      scroll_container = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.p-scroller")))
 
-        print(f"Striive - aantal vacatures gevonden: {len(results)}")
-        return pd.DataFrame(results)
+      vacature_links_dict = {}
+      repeats = 0
+      max_repeats = 5
 
-    except Exception as e:
-        print(f"❌ Fout tijdens scraping Striive: {e}")
-        return pd.DataFrame()
-    finally:
-        driver.quit()
+      while repeats < max_repeats:
+          job_elements = driver.find_elements(By.CSS_SELECTOR, "div.job-request-row")
+
+          new_count = 0
+          for div in job_elements:
+              try:
+                  title = div.find_element(By.CSS_SELECTOR, "[data-testid='listJobRequestTitle']").text.strip()
+                  opdrachtgever = div.find_element(By.CSS_SELECTOR, "[data-testid='listClientName']").text.strip()
+                  regio = div.find_element(By.CSS_SELECTOR, "[data-testid='listRegionName']").text.strip()
+                  link = div.find_element(By.CSS_SELECTOR, "a[data-testid='jobRequestDetailLink']").get_attribute("href")
+                  if link not in vacature_links_dict:
+                      vacature_links_dict[link] = {
+                          "Titel": title,
+                          "Opdrachtgever": opdrachtgever,
+                          "Regio": regio,
+                          "Link": link,
+                          "Bron": "Striive"
+                      }
+                      new_count += 1
+              except:
+                  continue
+
+          if new_count == 0:
+              repeats += 1
+          else:
+              repeats = 0
+
+          driver.execute_script("arguments[0].scrollBy(0, 1000);", scroll_container)
+          time.sleep(1.2)
+
+      results = []
+      for link, vacature in vacature_links_dict.items():
+          try:
+              driver.get(link)
+
+              # Beschrijving ophalen met timeout
+              try:
+                  desc_elem = WebDriverWait(driver, 5).until(
+                      EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='jobRequestDescription']"))
+                  )
+                  beschrijving_html = desc_elem.get_attribute("innerHTML").strip()
+                  soup = BeautifulSoup(beschrijving_html, "html.parser")
+                  beschrijving_tekst = soup.get_text(separator="\n").strip()
+                  vacature["Beschrijving"] = beschrijving_tekst
+
+              except Exception as inner_e:
+                  vacature["Beschrijving"] = ""
+
+              results.append(vacature)
+
+          except Exception as outer_e:
+              st.warning(f"⚠️ Fout bij laden detailpagina: {link} - {outer_e}")
+              continue
+
+      st.write(f"Striive - aantal vacatures gevonden: {len(results)}")
+      return pd.DataFrame(results)
+
+  except Exception as e:
+      st.error(f"❌ Fout tijdens scraping Striive: {e}")
+      return pd.DataFrame()
+
+  finally:
+      driver.quit()
 
 
 # --- SCRAPE FLEXTENDER ---
