@@ -70,8 +70,7 @@ def get_total_pages(driver, wait):
 
 # --- SCRAPE STRIIVE ---
 def scrape_striive():
-    service = Service("/usr/bin/chromedriver")
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = get_chrome_driver()
     wait = WebDriverWait(driver, 15)
     try:
         driver.get("https://login.striive.com/")
@@ -149,8 +148,7 @@ def scrape_striive():
 
 # --- SCRAPE FLEXTENDER ---
 def scrape_flextender():
-    service = Service("/usr/bin/chromedriver")
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = get_chrome_driver()
     wait = WebDriverWait(driver, 10)
 
     try:
@@ -228,6 +226,7 @@ def scrape_flextender():
     print(f"Flextender - aantal vacatures gevonden: {len(data)}")
     driver.quit()
     return pd.DataFrame(data)
+
 
 
 # --- COMBINED SCRAPE ---
