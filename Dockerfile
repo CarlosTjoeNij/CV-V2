@@ -1,26 +1,41 @@
-# 1. Basis image
+# --- Base image ---
 FROM python:3.11-slim
 
-# 2. Werkdirectory
+# --- Werkdirectory ---
 WORKDIR /app
 
-# 3. Systeemafhankelijkheden (optioneel, voor pandas/parquet)
+# --- Systeemafhankelijkheden + Chrome dependencies ---
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
+    wget unzip curl gnupg fonts-liberation libappindicator3-1 libasound2 \
+    libatk-bridge2.0-0 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 \
+    libdrm2 libgbm1 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 \
+    libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 \
+    libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 lsb-release \
+    xdg-utils build-essential ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# 4. Copy requirements en installeer Python packages
+# --- Google Chrome installeren ---
+RUN wget -q -O /tmp/google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt install -y /tmp/google-chrome.deb \
+    && rm /tmp/google-chrome.deb
+
+# --- ChromeDriver installeren passend bij Chrome ---
+RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') && \
+    echo "Chrome versie: $CHROME_VERSION" && \
+    wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROME_VERSION}/chromedriver_linux64.zip" && \
+    unzip /tmp/chromedriver.zip -d /usr/bin/ && \
+    rm /tmp/chromedriver.zip && \
+    chmod +x /usr/bin/chromedriver
+
+# --- Python dependencies installeren ---
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 5. Copy app code
+# --- App code kopiëren ---
 COPY . .
 
-# 6. Streamlit configureren voor Cloud Run
-ENV STREAMLIT_SERVER_HEADLESS=true
-ENV STREAMLIT_SERVER_ENABLE_CORS=false
+# --- Environment variables voor Cloud Run ---
 ENV PORT=8080
 
-# 7. Container command
-CMD ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]
+# --- Run scraper ---
+CMD ["python", "daily_scraper.py"]
