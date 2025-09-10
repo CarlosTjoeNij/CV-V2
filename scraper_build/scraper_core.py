@@ -3,21 +3,39 @@ import time
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+import streamlit as st  # Voor secrets
 
-# Deze kun je in .env of secrets zetten
-import os
-STRIIVE_USER = os.environ.get("STRIIVE_USER")
-STRIIVE_PASS = os.environ.get("STRIIVE_PASS")
-FLEX_USER = os.environ.get("FLEX_USER")
-FLEX_PASS = os.environ.get("FLEX_PASS")
+# Haal credentials op uit .streamlit/secrets.toml
+STRIIVE_USER = st.secrets["striive"]["username"]
+STRIIVE_PASS = st.secrets["striive"]["password"]
+FLEX_USER = st.secrets["flextender"]["username"]
+FLEX_PASS = st.secrets["flextender"]["password"]
 
+
+# --- HELPER: Chrome driver voor Cloud Run ---
+def get_chrome_driver(timeout=15):
+    chrome_options = Options()
+    chrome_options.binary_location = "/usr/bin/google-chrome"
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920x1080")
+
+    service = Service("/usr/bin/chromedriver")
+    print("✅ Start ChromeDriver vanaf:", service.path)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.implicitly_wait(timeout)
+    return driver
+
+
+# --- HELPER: totaal aantal pagina's bij Flextender ---
 def get_total_pages(driver, wait):
     max_page = 1
     seen_pages = set()
@@ -49,17 +67,11 @@ def get_total_pages(driver, wait):
 
     return max_page
 
+
+# --- SCRAPE STRIIVE ---
 def scrape_striive():
-    options = Options()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920x1080")
-
-    driver = webdriver.Chrome(options=options)
+    driver = get_chrome_driver()
     wait = WebDriverWait(driver, 15)
-
     try:
         driver.get("https://login.striive.com/")
         time.sleep(2)
@@ -67,12 +79,15 @@ def scrape_striive():
         driver.find_element(By.ID, "password").send_keys(STRIIVE_PASS)
         driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
 
-        opdrachten_link = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, '/inbox')]//span[contains(text(), 'Opdrachten')]")))
+        opdrachten_link = wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//a[contains(@href, '/inbox')]//span[contains(text(), 'Opdrachten')]")
+            )
+        )
         opdrachten_link.click()
         print("✅ Inloggen op Striive gelukt")
 
         scroll_container = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.p-scroller")))
-
         vacature_links_dict = {}
         repeats = 0
         max_repeats = 5
@@ -130,14 +145,10 @@ def scrape_striive():
     finally:
         driver.quit()
 
-def scrape_flextender():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
 
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+# --- SCRAPE FLEXTENDER ---
+def scrape_flextender():
+    driver = get_chrome_driver()
     wait = WebDriverWait(driver, 10)
 
     try:
@@ -216,6 +227,9 @@ def scrape_flextender():
     driver.quit()
     return pd.DataFrame(data)
 
+
+
+# --- COMBINED SCRAPE ---
 def scrape_all_jobs():
     start_time = time.time()
     df_striive = scrape_striive()
@@ -224,16 +238,3 @@ def scrape_all_jobs():
     duration = time.time() - start_time
     print(f"Scraping voltooid in {duration/60:.1f} minuten")
     return df_combined
-
-def main():
-    print("🚀 Start scraping van alle jobs...")
-    df = scrape_all_jobs()
-    
-    # Opslaan als CSV of printen
-    output_file = "scraped_jobs.csv"
-    df.to_csv(output_file, index=False)
-    print(f"✅ Scraping voltooid! Resultaten opgeslagen in '{output_file}'")
-    print(df.head())
-
-if __name__ == "__main__":
-    main()
