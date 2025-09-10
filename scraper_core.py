@@ -17,6 +17,7 @@ STRIIVE_PASS = st.secrets["striive"]["password"]
 FLEX_USER = st.secrets["flextender"]["username"]
 FLEX_PASS = st.secrets["flextender"]["password"]
 
+print("Running CV-V2 scraper")
 
 # --- HELPER: Chrome driver voor Cloud Run ---
 def get_chrome_driver(timeout=15):
