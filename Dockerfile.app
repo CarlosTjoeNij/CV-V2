@@ -36,4 +36,4 @@ ENV STREAMLIT_SERVER_BASE_URL_PATH ""
 EXPOSE $PORT
 
 # Start Streamlit app
-CMD ["streamlit", "run", "app.py", "--server.port=$PORT", "--server.address=0.0.0.0"]
+CMD ["sh", "-c", "streamlit run app.py --server.port=$PORT --server.address=0.0.0.0"]
