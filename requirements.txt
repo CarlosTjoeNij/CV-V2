@@ -2,7 +2,7 @@ streamlit
 selenium
 webdriver-manager
 chromedriver-autoinstaller
-PyMuPDF
+PyMuPDF==1.23.8
 beautifulsoup4
 nltk
 scikit-learn
