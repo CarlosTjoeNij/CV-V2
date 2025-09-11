@@ -5,7 +5,10 @@ import io
 import datetime
 from google.cloud import storage
 import fitz
-st.write("App ready")
+from nltk.corpus import stopwords
+
+nltk.download('stopwords')
+
 # Titel & intro
 st.set_page_config(page_title="CV Matcher", layout="wide")
 st.title("CV-Vacature Matcher | Striive & Flextender")
@@ -182,6 +185,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
