@@ -1,11 +1,33 @@
 # app.py
-import streamlit as st
-import pandas as pd
-import io
 import datetime
 from google.cloud import storage
+import os
+import time
+import pandas as pd
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from bs4 import BeautifulSoup
+from selenium.common.exceptions import NoSuchElementException
+import time
+import numpy as np
+
 import fitz
+import nltk
 from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import re
+import streamlit as st
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+
+import spacy
 
 nltk.download('stopwords')
 
@@ -185,6 +207,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
