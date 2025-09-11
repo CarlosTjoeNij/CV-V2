@@ -61,7 +61,7 @@ if df is None:
     st.error(f"Geen data gevonden voor vandaag. Verwacht bestand: `{filename}` in bucket `scrapes_cvmatcher`.")
     st.stop()
 
-st.success(f"Data geladen uit `{filename}` - {len(df)} vacatures gevonden.")
+st.success(f"{len(df)} vacatures gevonden | Data geladen uit `{filename}`")
 
 # --- PDF extractie ---
 def extract_text_from_pdf(pdf_file):
@@ -183,7 +183,7 @@ def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=8):
     
 # --- Streamlit UI ---
 if uploaded_file:
-    with st.spinner("Vacatures scrapen en verwerken, dit kan een tijdje duren..."):
+    with st.spinner("Beste matches zoeken"):
         
         cv_text = extract_text_from_pdf(uploaded_file)
         cv_text_clean = clean_text_nl(cv_text)
@@ -208,6 +208,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
