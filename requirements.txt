@@ -3,7 +3,6 @@ selenium
 webdriver-manager
 chromedriver-autoinstaller
 beautifulsoup4
-pymupdf
 nltk
 scikit-learn
 spacy
@@ -12,5 +11,6 @@ pandas
 Flask
 google-cloud-storage
 pyarrow
+pymupdf>=1.23.8
 fastparquet
 nl_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/nl_core_news_sm-3.8.0/nl_core_news_sm-3.8.0-py3-none-any.whl
