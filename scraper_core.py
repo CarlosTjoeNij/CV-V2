@@ -13,6 +13,7 @@ import streamlit as st  # Voor secrets
 
 from platformen.striive import scrape_striive
 from platformen.flextender import scrape_flextender
+from platformen.yacht import scrape_yacht
 
 # --- COMBINED SCRAPE ---
 def scrape_all_jobs():
