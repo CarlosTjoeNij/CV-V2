@@ -2,6 +2,7 @@
 import datetime
 from google.cloud import storage
 import os
+import io
 import time
 import pandas as pd
 from selenium import webdriver
@@ -207,6 +208,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
