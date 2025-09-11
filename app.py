@@ -4,6 +4,7 @@ import pandas as pd
 import io
 import datetime
 from google.cloud import storage
+import fitz
 
 # Titel & intro
 st.set_page_config(page_title="CV Matcher", layout="wide")
@@ -86,6 +87,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
