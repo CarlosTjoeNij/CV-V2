@@ -16,11 +16,6 @@ from selenium.common.exceptions import TimeoutException, ElementClickIntercepted
 import time
 import numpy as np
 
-import fitz
-import nltk
-from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 import re
 import streamlit as st
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
@@ -65,7 +60,6 @@ def scrape_yacht():
     
     driver = get_chrome_driver()
     wait = WebDriverWait(driver, 15)
-    
     try:
         driver.get("https://www.yacht.nl/mijn-yacht/")
         driver.set_window_size(1920, 1080)
