@@ -18,9 +18,6 @@ import numpy as np
 
 import re
 import streamlit as st
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-
-import spacy
 import requests
 
 provincies = [
