@@ -24,7 +24,7 @@ def upload_to_gcs(df: pd.DataFrame):
     print(f"✅ Uploaded {len(df)} rows to gs://{BUCKET_NAME}/{filename}")
 
 def main():
-    print("🚀 Start scraping job...")
+    print("Start scraping job...")
     df = scrape_all_jobs()  # Komt uit scraper_core
 
     if df.empty:
