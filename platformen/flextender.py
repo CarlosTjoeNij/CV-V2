@@ -3,7 +3,6 @@ import time
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -71,8 +70,7 @@ def scrape_flextender():
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
 
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = get_chrome_driver()
     wait = WebDriverWait(driver, 10)
 
     driver.get("https://app.flextender.nl/")
