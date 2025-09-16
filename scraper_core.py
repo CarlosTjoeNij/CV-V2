@@ -18,33 +18,19 @@ from platformen.yacht import scrape_yacht
 # --- COMBINED SCRAPE ---
 def scrape_all_jobs():
     start_time = time.time()
-    all_dfs = []
+    print("➡️ Start scrape: Striive")
+    df_striive = scrape_striive()
 
-    # Striive
-    try:
-        df_striive = scrape_striive()
-        all_dfs.append(df_striive)
-    except Exception as e:
-        print(f"❌ Fout tijdens scraping Striive: {e}")
+    print("➡️ Start scrape: Flextender")
+    df_flex = scrape_flextender()
 
-    # Flextender
-    try:
-        df_flex = scrape_flextender()
-        all_dfs.append(df_flex)
-    except Exception as e:
-        print(f"❌ Fout tijdens scraping Flextender: {e}")
+    print("➡️ Start scrape: Yacht")
+    df_yacht = scrape_yacht()
 
-    # Yacht
-    try:
-        df_yacht = scrape_yacht()
-        all_dfs.append(df_yacht)
-    except Exception as e:
-        print(f"❌ Fout tijdens scraping Yacht: {e}")
-
-    if all_dfs:
-        df_combined = pd.concat(all_dfs, ignore_index=True)
-    else:
-        df_combined = pd.DataFrame()
+    df_combined = pd.concat([df_striive, df_flex, df_yacht], ignore_index=True)
+    duration = time.time() - start_time
+    print(f"✅ Scraping voltooid in {duration/60:.1f} minuten")
+    return df_combined
 
     duration = time.time() - start_time
     print(f"Scraping voltooid in {duration/60:.1f} minuten")
