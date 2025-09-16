@@ -24,10 +24,10 @@ def scrape_all_jobs():
     print("➡️ Start scrape: Flextender")
     df_flex = scrape_flextender()
 
-    print("➡️ Start scrape: Yacht")
-    df_yacht = scrape_yacht()
+    #print("➡️ Start scrape: Yacht")
+    #df_yacht = scrape_yacht()
 
-    df_combined = pd.concat([df_striive, df_flex, df_yacht], ignore_index=True)
+    df_combined = pd.concat([df_striive, df_flex], ignore_index=True)
     duration = time.time() - start_time
     print(f"✅ Scraping voltooid in {duration/60:.1f} minuten")
     return df_combined
