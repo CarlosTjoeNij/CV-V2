@@ -141,13 +141,13 @@ def filter_relevant_pos_nl(text):
     return " ".join(filtered_tokens)
 
 def clean_text_nl(text):
-    if not isinstance(text, str):
-        return ""  # Lege string als input geen tekst is
-    text = re.sub(r"[^a-zA-ZÀ-ÿ\s]", "", text)  
+    if not isinstance(text, str) or not text.strip():
+        return "onbekend"
+    text = re.sub(r"[^a-zA-ZÀ-ÿ\s]", "", text)
     words = text.lower().split()
     words = [word for word in words if word not in dutch_stopwords]
     words_all = [word for word in words if word not in ENGLISH_STOP_WORDS]
-    return " ".join(words_all)
+    return " ".join(words_all) if words_all else text.lower()
 
 def match_jobs(cv_text, df):
     df["clean_description"] = df["Beschrijving"].apply(clean_text_nl)
@@ -211,6 +211,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
