@@ -140,7 +140,9 @@ def filter_relevant_pos_nl(text):
     return " ".join(filtered_tokens)
 
 def clean_text_nl(text):
-    text = re.sub(r"[^a-zA-ZÀ-ÿ\s]", "", text)  # Alleen letters en accenten
+    if not isinstance(text, str):
+        return ""  # Lege string als input geen tekst is
+    text = re.sub(r"[^a-zA-ZÀ-ÿ\s]", "", text)  
     words = text.lower().split()
     words = [word for word in words if word not in dutch_stopwords]
     words_all = [word for word in words if word not in ENGLISH_STOP_WORDS]
@@ -208,6 +210,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
