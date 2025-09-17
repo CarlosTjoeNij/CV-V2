@@ -62,7 +62,7 @@ if df is None:
     st.error(f"Geen data gevonden voor vandaag. Verwacht bestand: `{filename}` in bucket `scrapes_cvmatcher`.")
     st.stop()
 
-st.success(f"{len(df)} vacatures gevonden | Data geladen uit `{filename}`")
+st.success(f"Vandaag: {len(df)} vacatures gevonden | Data geladen uit `{filename}`")
 
 # --- PDF extractie ---
 def extract_text_from_pdf(pdf_file):
@@ -211,6 +211,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
