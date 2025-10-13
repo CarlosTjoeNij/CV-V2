@@ -36,7 +36,7 @@ nltk.download('stopwords')
 st.set_page_config(page_title="CV Matcher", layout="wide")
 st.title("CV-Vacature Matcher")
 st.write("Deze app gebruikt de laatste vacatures (brokerplatforms) die dagelijks automatisch worden gescraped.")
-st.write("Gebruikte platformen: Striive, Flextender en Yacht")
+st.write("Gebruikte platformen: Striive, Flextender, Yacht en IGOM")
 
 # Functie om data te laden vanuit GCS
 @st.cache_data(ttl=3600)  # Cache 1 uur
@@ -211,6 +211,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
