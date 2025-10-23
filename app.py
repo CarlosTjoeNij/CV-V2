@@ -126,7 +126,7 @@ extra_stopwoorden = [
     'bevindingen', 'inzicht', 'nieuwe', 'daarnaast', 'daarbij', 'daarom', 'daaromheen',
     'minder', 'waarde', 'intern', 'aantal', 'professional', 'omgeving', 'gebied', 'niveau',
     'verder', 'werkervaring', 'opdrachtgever', 'jaar', 'nederlands', 'overige', 'universiteit',
-    'tijdens', 'uitdagingen'
+    'tijdens', 'uitdagingen', 'punten', 'amsterdam'
 ]
 
 dutch_stopwords = set(stopwords.words('dutch') + extra_stopwoorden + stopwords.words('english'))
@@ -211,6 +211,7 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
 
 
