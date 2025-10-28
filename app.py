@@ -200,12 +200,15 @@ if uploaded_file:
 
         st.write("Top Matches:")
 
-        # Toon top 10 matches met klikbare links
-        for _, row in matched_df.head(10).iterrows():
-            st.markdown(
-                f"**{row['Titel']}** | {row['Bron']} | {row['Regio']} | [Bekijk vacature]({row['Link']})",
-                unsafe_allow_html=True
-            )
+        # Maak top 10 genummerde tabel met klikbare links
+        top_matches = matched_df.head(10).reset_index(drop=True)
+        markdown_table = "| # | Titel | Bron | Regio | Link |\n"
+        markdown_table += "|---|-------|------|-------|------|\n"
+        for i, row in top_matches.iterrows():
+            link_md = f"[Bekijk vacature]({row['Link']})" if pd.notnull(row['Link']) else ""
+            markdown_table += f"| {i+1} | {row['Titel']} | {row['Bron']} | {row['Regio']} | {link_md} |\n"
+
+        st.markdown(markdown_table, unsafe_allow_html=True)
 
         if not matched_df.empty:
             top_job = matched_df.iloc[0]
@@ -217,4 +220,5 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
