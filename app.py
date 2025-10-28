@@ -186,7 +186,7 @@ def get_top_keywords_for_match(cv_text, job_desc, tfidf_vectorizer, top_n=8):
     
 # --- Streamlit UI ---
 if uploaded_file:
-    with st.spinner("Beste matches zoeken"):
+    with st.spinner("Beste matches zoeken, dit kan even duren"):
         
         cv_text = extract_text_from_pdf(uploaded_file)
         cv_text_clean = clean_text_nl(cv_text)
@@ -200,13 +200,14 @@ if uploaded_file:
 
         st.write("Top Matches:")
 
-        # Maak top 10 genummerde tabel met klikbare links
+        # Maak top 10 genummerde tabel met klikbare links en score
         top_matches = matched_df.head(10).reset_index(drop=True)
-        markdown_table = "| # | Titel | Bron | Regio | Link |\n"
-        markdown_table += "|---|-------|------|-------|------|\n"
+        markdown_table = "| # | Titel | Score | Bron | Regio | Link |\n"
+        markdown_table += "|---|-------|-------|------|-------|------|\n"
         for i, row in top_matches.iterrows():
             link_md = f"[Bekijk vacature]({row['Link']})" if pd.notnull(row['Link']) else ""
-            markdown_table += f"| {i+1} | {row['Titel']} | {row['Bron']} | {row['Regio']} | {link_md} |\n"
+            score_val = f"{row['score']:.3f}" if pd.notnull(row['score']) else ""
+            markdown_table += f"| {i+1} | {row['Titel']} | {score_val} | {row['Bron']} | {row['Regio']} | {link_md} |\n"
 
         st.markdown(markdown_table, unsafe_allow_html=True)
 
@@ -220,5 +221,3 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
-
-
