@@ -198,13 +198,14 @@ if uploaded_file:
         if gekozen_provincie:
             matched_df = matched_df[matched_df["Regio"].str.contains(gekozen_provincie, case=False, na=False)]
 
-        # Maak Link kolom klikbaar in Markdown-formaat
-        matched_df["Link"] = matched_df.apply(
-            lambda row: f"[Bekijk vacature]({row['Link']})" if pd.notnull(row['Link']) else "", axis=1
-        )
-    
         st.write("Top Matches:")
-        st.dataframe(matched_df[["Titel", "score", "Bron", "Link", "Regio"]].head(10))
+
+        # Toon top 10 matches met klikbare links
+        for _, row in matched_df.head(10).iterrows():
+            st.markdown(
+                f"**{row['Titel']}** | {row['Bron']} | {row['Regio']} | [Bekijk vacature]({row['Link']})",
+                unsafe_allow_html=True
+            )
 
         if not matched_df.empty:
             top_job = matched_df.iloc[0]
@@ -216,3 +217,4 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
