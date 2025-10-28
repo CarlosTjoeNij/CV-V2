@@ -199,11 +199,11 @@ if uploaded_file:
             matched_df = matched_df[matched_df["Regio"].str.contains(gekozen_provincie, case=False, na=False)]
     
         st.write("Top Matches:")
-        st.dataframe(matched_df[["Titel", "score", "Link", "Regio"]].head(10))
+        st.dataframe(matched_df[["Titel", "score", "Bron", "Link", "Regio"]].head(10))
     
         if not matched_df.empty:
             top_job = matched_df.iloc[0]
-            st.subheader(f"Top match: {top_job['Titel']} bij {top_job['Opdrachtgever']}")
+            st.subheader(f"Top match: {top_job['Titel']} | {top_job['Bron']}")
             keywords = get_top_keywords_for_match(cv_text_clean, top_job["clean_description"], tfidf)
             
             st.write("Belangrijkste overeenkomende woorden die bijdragen aan de score:")
@@ -211,4 +211,5 @@ if uploaded_file:
                 st.write(f"- {word} (score: {score:.3f})")
         else:
             st.info("Upload eerst een CV om de matching te starten.")
+
 
